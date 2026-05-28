@@ -637,16 +637,14 @@ mark{background:rgba(29,95,173,.3);color:var(--glow);border-radius:2px;padding:0
 const PASS = 'admin123'; // ← altere aqui antes de publicar
 
 // ▼▼▼ COLE AQUI AS SUAS CHAVES DO SUPABASE ▼▼▼
-const SUPABASE_URL     = 'https://aelprslvvaoaxqlpgquj.supabase.co/rest/v1/';        // ex: https://xyzxyz.supabase.co
-const SUPABASE_ANON    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbHByc2x2dmFvYXhxbHBncXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTQ0NzMsImV4cCI6MjA5NTU3MDQ3M30.Ud1IL6IFD2iutdzsdrsV18r6GhDQdjVjN8VtrMp589s';   // chave pública (leitura)
-const SUPABASE_SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbHByc2x2dmFvYXhxbHBncXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTk5NDQ3MywiZXhwIjoyMDk1NTcwNDczfQ.0zoEh4ZsJGr2LPv5djmAigHB9fm3Tc1qYsgp8y1pU50';   // chave secreta (admin)
+const SUPABASE_URL  = 'https://aelprslvvaoaxqlpgquj.supabase.co/rest/v1/';       // ex: https://xyzxyz.supabase.co
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbHByc2x2dmFvYXhxbHBncXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTQ0NzMsImV4cCI6MjA5NTU3MDQ3M30.Ud1IL6IFD2iutdzsdrsV18r6GhDQdjVjN8VtrMp589s';  // chave anon/public
 // ▲▲▲ ──────────────────────────────────────── ▲▲▲
 
-// Clientes Supabase — um para leitura pública, outro para operações admin
-const sbPublic  = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-let   sbAdmin   = null; // criado apenas após login admin
+// Um único cliente — o RLS no Supabase controla as permissões
+let sb = null;
 
-// Chave de fallback local (usado se Supabase não estiver configurado)
+// Fallback local (usado se Supabase não estiver configurado)
 const LS_DATA = 'efetivo_v4';
 const LS_REQS = 'efetivo_reqs_v4';
 
@@ -885,13 +883,20 @@ function sbReady(){
   return SUPABASE_URL !== 'COLE_SUA_URL_AQUI' && SUPABASE_URL.startsWith('https://');
 }
 
+/* ── INIT do cliente Supabase ───────────────────────────── */
+function initSb(){
+  if(sbReady() && !sb){
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  }
+}
+
 /* ── CARREGAR DADOS ─────────────────────────────────────── */
 async function load(){
+  initSb();
   showLoading(true);
-  if(sbReady()){
+  if(sb){
     try{
-      // Militares — leitura pública
-      const {data:rows, error} = await sbPublic
+      const {data:rows, error} = await sb
         .from('militares')
         .select('*')
         .order('created_at', {ascending:true});
@@ -904,14 +909,13 @@ async function load(){
         rg:       r.rg,
         nguerra:  r.nguerra||''
       }));
-      // Solicitações só o admin pode ler — carregamos após login
     } catch(e){
       console.error('Supabase load error:',e);
       toast('Erro ao carregar dados. Usando cache local.','wrn');
       loadLocal();
     }
   } else {
-    loadLocal(); // fallback localStorage
+    loadLocal();
   }
   showLoading(false);
   render();
@@ -924,24 +928,13 @@ function loadLocal(){
   try{reqs=JSON.parse(localStorage.getItem(LS_REQS)||'[]');}catch{reqs=[];}
 }
 
-/* ── SALVAR — militares ─────────────────────────────────── */
-async function save(){
-  if(!sbReady()){ saveLocal(); return; }
-  // Supabase: upsert do array completo
-  // (feito individualmente nas funções add/edit/delete)
-}
 function saveLocal(){ localStorage.setItem(LS_DATA,JSON.stringify(data)); }
-
-/* ── SALVAR — solicitações ──────────────────────────────── */
-async function saveReqs(){
-  if(!sbReady()){ localStorage.setItem(LS_REQS,JSON.stringify(reqs)); }
-}
 
 /* ── CARREGAR SOLICITAÇÕES (admin) ──────────────────────── */
 async function loadReqs(){
-  if(!sbReady()||!sbAdmin){ reqs=[]; return; }
+  if(!sb){ reqs=[]; return; }
   try{
-    const {data:rows,error}=await sbAdmin
+    const {data:rows,error}=await sb
       .from('solicitacoes')
       .select('*')
       .eq('status','pendente')
@@ -1250,9 +1243,7 @@ function openAdminLogin(){
 async function doLogin(){
   if(document.getElementById('loginPwd').value===PASS){
     isAdmin=true;
-    // Cria cliente privilegiado com service_role key
-    if(sbReady()){
-      sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE);
+    if(sb){
       await loadReqs();
     } else {
       try{reqs=JSON.parse(localStorage.getItem(LS_REQS)||'[]');}catch{reqs=[];}
@@ -1266,7 +1257,7 @@ async function doLogin(){
   }
 }
 function adminLogout(){
-  isAdmin=false; sbAdmin=null; reqs=[];
+  isAdmin=false; reqs=[];
   applyAdminUI(); toast('Sessão encerrada.','inf');
 }
 
@@ -1302,9 +1293,9 @@ async function saveMilitar(){
   if(!grad||!nome||!rg){toast('Preencha todos os campos obrigatórios.','err');return;}
   if(data.find(m=>m.rg===rg)){toast(`RG ${rg} já cadastrado.`,'err');return;}
 
-  if(sbReady()&&sbAdmin){
+  if(sb){
     try{
-      const {data:row,error}=await sbAdmin
+      const {data:row,error}=await sb
         .from('militares')
         .insert({graduacao:grad,quadro:quad,nome,rg,nguerra})
         .select().single();
@@ -1353,9 +1344,9 @@ async function updateMilitar(){
   if(!grad||!nome||!rg){toast('Preencha todos os campos obrigatórios.','err');return;}
   if(data.find(m=>m.rg===rg&&m.id!==id)){toast(`RG ${rg} já está em uso.`,'err');return;}
 
-  if(sbReady()&&sbAdmin){
+  if(sb){
     try{
-      const {error}=await sbAdmin
+      const {error}=await sb
         .from('militares')
         .update({graduacao:grad,quadro:quad,nome,rg,nguerra})
         .eq('id',id);
@@ -1382,9 +1373,9 @@ function confirmDel(id){
   open_('shConfirm');
 }
 async function doDelete(){
-  if(sbReady()&&sbAdmin){
+  if(sb){
     try{
-      const {error}=await sbAdmin
+      const {error}=await sb
         .from('militares').delete().eq('id',delTarget);
       if(error) throw error;
     } catch(e){
@@ -1412,9 +1403,9 @@ async function submitRequest(){
   if(!grad||!nome||!rg){toast('Preencha os campos obrigatórios.','err');return;}
   if(data.find(m=>m.rg===rg)){toast(`RG ${rg} já está no quadro.`,'err');return;}
 
-  if(sbReady()){
+  if(sb){
     try{
-      const {error}=await sbPublic
+      const {error}=await sb
         .from('solicitacoes')
         .insert({graduacao:grad,quadro:quad,nome,rg,obs,status:'pendente'});
       if(error) throw error;
@@ -1466,18 +1457,18 @@ function approveReq(id){
 }
 // Chamado após salvar o militar aprovado
 async function approveReqFinish(id){
-  if(sbReady()&&sbAdmin){
+  if(sb){
     try{
-      await sbAdmin.from('solicitacoes').update({status:'aprovado'}).eq('id',id);
+      await sb.from('solicitacoes').update({status:'aprovado'}).eq('id',id);
     } catch(e){ console.error(e); }
   }
   reqs=reqs.filter(x=>x.id!==id);
   await saveReqs();
 }
 async function rejectReq(id){
-  if(sbReady()&&sbAdmin){
+  if(sb){
     try{
-      await sbAdmin.from('solicitacoes').update({status:'rejeitado'}).eq('id',id);
+      await sb.from('solicitacoes').update({status:'rejeitado'}).eq('id',id);
     } catch(e){ console.error(e); }
   }
   reqs=reqs.filter(x=>x.id!==id);
