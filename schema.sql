@@ -22,32 +22,27 @@ CREATE TABLE IF NOT EXISTS solicitacoes (
   nome       TEXT NOT NULL,
   rg         TEXT NOT NULL,
   obs        TEXT NOT NULL DEFAULT '',
-  status     TEXT NOT NULL DEFAULT 'pendente',  -- pendente | aprovado | rejeitado
+  status     TEXT NOT NULL DEFAULT 'pendente',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ── SEGURANÇA (Row Level Security) ──────────────────────────
+-- Usamos a anon key para todas as operações.
+-- A proteção admin é feita pela senha no aplicativo.
 
--- Habilita RLS nas duas tabelas
 ALTER TABLE militares    ENABLE ROW LEVEL SECURITY;
 ALTER TABLE solicitacoes ENABLE ROW LEVEL SECURITY;
 
--- Qualquer pessoa pode LER militares (quadro é público)
-CREATE POLICY "leitura_publica_militares"
-  ON militares FOR SELECT
-  USING (true);
-
--- Apenas o service_role (admin via chave secreta) pode INSERT/UPDATE/DELETE
-CREATE POLICY "admin_escreve_militares"
+-- Permite TUDO na tabela militares via anon key
+CREATE POLICY "acesso_total_militares"
   ON militares FOR ALL
-  USING (auth.role() = 'service_role');
-
--- Qualquer pessoa pode INSERIR solicitações
-CREATE POLICY "usuario_solicita"
-  ON solicitacoes FOR INSERT
+  TO anon
+  USING (true)
   WITH CHECK (true);
 
--- Apenas admin pode LER/ATUALIZAR/DELETAR solicitações
-CREATE POLICY "admin_gerencia_solicitacoes"
+-- Permite TUDO na tabela solicitacoes via anon key
+CREATE POLICY "acesso_total_solicitacoes"
   ON solicitacoes FOR ALL
-  USING (auth.role() = 'service_role');
+  TO anon
+  USING (true)
+  WITH CHECK (true);
