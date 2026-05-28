@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Quadro de Efetivo</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── RESET & VARS ──────────────────────────────────────── */
+:root{
+  --navy:   #07111f;
+  --mid:    #0d1e35;
+  --light:  #122847;
+  --steel:  #1a3356;
+  --accent: #1d5fad;
+  --glow:   #2f7de1;
+  --gold:   #c9a84c;
+  --silver: #7a9bbf;
+  --text:   #dde6f0;
+  --muted:  #5e7d9e;
+  --border: rgba(35,80,150,.28);
+  --card:   rgba(13,30,53,.85);
+  --inp:    rgba(7,17,31,.92);
+  --danger: #c0392b;
+  --ok:     #1e8449;
+  --warn:   #b7770d;
+  --nguerra:#f0a500;   /* cor do Nome de Guerra */
+  --sat: env(safe-area-inset-top,0px);
+  --sab: env(safe-area-inset-bottom,0px);
+  --sar: env(safe-area-inset-right,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{
+  font-family:'IBM Plex Sans',sans-serif;
+  background:var(--navy);color:var(--text);
+  min-height:100dvh;overflow-x:hidden;
+  padding-top:var(--sat);
+  padding-bottom:calc(var(--sab) + 84px);
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(29,95,173,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(29,95,173,.03) 1px,transparent 1px);
+  background-size:48px 48px;
+}
+button{font-family:'IBM Plex Sans',sans-serif;cursor:pointer}
+input,select,textarea{font-family:'IBM Plex Sans',sans-serif}
+
+/* ── HEADER ────────────────────────────────────────────── */
+.header{
+  position:sticky;top:0;z-index:90;
+  background:rgba(7,17,31,.97);
+  border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);
+  padding:0 1rem;padding-top:var(--sat);
+}
+.header-inner{
+  display:flex;align-items:center;gap:.75rem;
+  height:56px;max-width:640px;margin:0 auto;
+}
+.logo{
+  width:34px;height:34px;flex-shrink:0;
+  border:2px solid var(--gold);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:.9rem;color:var(--gold);
+}
+.header-text h1{font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.header-text p{font-size:.6rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:.05em}
+.header-actions{margin-left:auto;display:flex;align-items:center;gap:.5rem}
+.hbtn{
+  display:flex;align-items:center;gap:.3rem;
+  padding:.45rem .8rem;border:1px solid var(--border);
+  background:transparent;color:var(--muted);
+  border-radius:8px;font-size:.72rem;font-weight:600;letter-spacing:.05em;
+  transition:all .15s;
+}
+.hbtn:active{transform:scale(.95)}
+.hbtn.gold{border-color:rgba(201,168,76,.4);color:var(--gold);background:rgba(201,168,76,.08)}
+
+/* ── MAIN ──────────────────────────────────────────────── */
+.main{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:1rem}
+
+/* ── ADMIN BANNER ──────────────────────────────────────── */
+.admin-banner{
+  display:none;
+  background:rgba(201,168,76,.07);
+  border:1px solid rgba(201,168,76,.25);
+  border-radius:10px;padding:.7rem 1rem;
+  margin-bottom:.85rem;
+  align-items:center;gap:.6rem;flex-wrap:wrap;
+}
+.admin-banner.on{display:flex}
+.ab-label{font-size:.72rem;color:var(--gold);font-weight:700;flex:1;min-width:100px}
+.ab-btns{display:flex;gap:.4rem;flex-wrap:wrap}
+
+/* ── SEARCH ────────────────────────────────────────────── */
+.search-row{display:flex;gap:.5rem;margin-bottom:.75rem}
+.search-wrap{position:relative;flex:1}
+.search-wrap input{
+  width:100%;background:var(--inp);border:1px solid var(--border);
+  color:var(--text);padding:.75rem .85rem .75rem 2.4rem;
+  border-radius:10px;font-size:.95rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;
+}
+.search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,95,173,.15)}
+.search-wrap input::placeholder{color:var(--muted)}
+.si{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.85rem;pointer-events:none}
+
+/* ── CHIPS ─────────────────────────────────────────────── */
+.chips{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.3rem;margin-bottom:.75rem;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{
+  flex-shrink:0;padding:.28rem .75rem;border-radius:100px;
+  font-size:.7rem;font-weight:600;letter-spacing:.03em;
+  border:1px solid var(--border);background:transparent;color:var(--muted);
+  transition:all .15s;white-space:nowrap;
+}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip:active{transform:scale(.95)}
+
+/* ── META ──────────────────────────────────────────────── */
+.meta{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;
+  margin-bottom:.6rem;
+}
+.meta .cnt{color:var(--glow);font-weight:600}
+
+/* ── CARDS ─────────────────────────────────────────────── */
+.cards{display:flex;flex-direction:column;gap:.5rem}
+
+.mcard{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;
+  display:flex;align-items:stretch;
+  backdrop-filter:blur(8px);
+}
+
+/* lateral colour stripe */
+.stripe{width:4px;flex-shrink:0}
+.stripe.s-oficial{background:#7ea8e0}
+.stripe.s-sub    {background:var(--gold)}
+.stripe.s-sgt    {background:#6db38a}
+.stripe.s-cb     {background:#8888cc}
+.stripe.s-sd     {background:var(--silver)}
+
+.mcard-body{flex:1;padding:.7rem .85rem;min-width:0}
+.mcard-top{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.22rem}
+.mcard-grad{
+  font-size:.68rem;font-weight:700;text-transform:uppercase;
+  color:var(--gold);letter-spacing:.03em;flex-shrink:0;line-height:1.3;
+}
+.mcard-quad{
+  font-size:.65rem;color:var(--silver);font-family:'IBM Plex Mono',monospace;
+  margin-left:auto;flex-shrink:0;line-height:1.3;padding-top:1px;
+}
+/* nome completo com suporte ao nome de guerra colorido */
+.mcard-nome{
+  font-size:.88rem;font-weight:600;color:var(--text);
+  word-break:break-word;margin-bottom:.18rem;line-height:1.35;
+}
+.nguerra{
+  color:var(--nguerra);
+  font-weight:700;
+}
+.mcard-rg{font-size:.68rem;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+
+/* admin actions */
+.mcard-actions{
+  display:none;flex-shrink:0;
+  flex-direction:column;border-left:1px solid var(--border);
+}
+.admin-on .mcard-actions{display:flex}
+.mac-btn{
+  flex:1;display:flex;align-items:center;justify-content:center;
+  background:transparent;border:none;color:var(--muted);
+  font-size:.82rem;min-width:38px;padding:0 .5rem;
+  transition:background .15s,color .15s;
+}
+.mac-btn:active{background:rgba(255,255,255,.06)}
+.mac-btn.edit:active{color:var(--glow)}
+.mac-btn.del:active{color:var(--danger)}
+.mac-sep{height:1px;background:var(--border);flex-shrink:0}
+
+/* grad divider */
+.grad-div{
+  display:flex;align-items:center;gap:.5rem;
+  margin:.45rem 0 .2rem;
+}
+.grad-div span{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.1em;color:var(--muted);flex-shrink:0;
+}
+.grad-div::before,.grad-div::after{
+  content:'';flex:1;height:1px;background:rgba(201,168,76,.15);
+}
+
+/* empty */
+.empty{text-align:center;padding:3.5rem 1rem;color:var(--muted)}
+.empty .ic{font-size:2rem;opacity:.3;margin-bottom:.5rem}
+.empty p{font-size:.88rem}
+
+/* ── FAB ───────────────────────────────────────────────── */
+.fab{
+  position:fixed;
+  bottom:calc(1.25rem + var(--sab));
+  right:calc(1.25rem + var(--sar));
+  z-index:80;width:52px;height:52px;border-radius:50%;
+  background:var(--accent);border:none;color:#fff;
+  font-size:1.5rem;line-height:1;
+  box-shadow:0 4px 20px rgba(29,95,173,.5);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s,box-shadow .15s;
+}
+.fab:active{transform:scale(.92)}
+.fab.gold{background:var(--gold);box-shadow:0 4px 20px rgba(201,168,76,.45)}
+
+/* ── OVERLAYS / SHEETS ─────────────────────────────────── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(6px);
+  align-items:flex-end;justify-content:center;
+}
+.overlay.on{display:flex}
+.sheet{
+  background:var(--mid);border-radius:14px 14px 0 0;
+  border:1px solid var(--border);border-bottom:none;
+  width:100%;max-width:580px;max-height:92dvh;
+  display:flex;flex-direction:column;
+  animation:sheetUp .22s ease;
+  padding-bottom:var(--sab);
+}
+@keyframes sheetUp{from{transform:translateY(36px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(min-width:600px){
+  .overlay{align-items:center}
+  .sheet{border-radius:14px;border:1px solid var(--border);max-height:88dvh;animation:dlgIn .2s ease}
+  @keyframes dlgIn{from{transform:scale(.96) translateY(-6px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+}
+.handle{width:36px;height:4px;border-radius:2px;background:var(--steel);margin:.7rem auto .2rem;flex-shrink:0}
+@media(min-width:600px){.handle{display:none}}
+.sh-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:.85rem 1.1rem .7rem;border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.sh-title{font-size:.82rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.sh-title.gold{color:var(--gold)}
+.sh-close{background:none;border:none;color:var(--muted);font-size:1.1rem;padding:.2rem;border-radius:6px}
+.sh-close:active{color:var(--text)}
+.sh-body{flex:1;overflow-y:auto;padding:1rem 1.1rem}
+.sh-foot{
+  padding:.75rem 1.1rem;border-top:1px solid var(--border);
+  display:flex;gap:.5rem;justify-content:flex-end;flex-shrink:0;
+}
+
+/* ── FORMS ─────────────────────────────────────────────── */
+.fg{margin-bottom:.9rem}
+.fg label{
+  display:block;font-size:.65rem;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--silver);
+  margin-bottom:.3rem;
+}
+.fg input,.fg select,.fg textarea{
+  width:100%;background:var(--inp);border:1px solid var(--border);
+  color:var(--text);padding:.7rem .85rem;
+  border-radius:8px;font-size:.95rem;outline:none;
+  transition:border-color .2s,box-shadow .2s;
+  -webkit-appearance:none;appearance:none;
+}
+.fg select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235e7d9e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right .85rem center;padding-right:2.2rem;
+}
+.fg select option{background:var(--mid)}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,95,173,.12)}
+.fg input::placeholder,.fg textarea::placeholder{color:var(--muted)}
+.fg textarea{resize:vertical;min-height:68px}
+.fg-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.fg-hint{font-size:.62rem;color:var(--muted);margin-top:.2rem;font-family:'IBM Plex Mono',monospace}
+
+/* nome de guerra preview */
+.ng-preview{
+  margin-top:.4rem;padding:.5rem .7rem;
+  background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.25);
+  border-radius:6px;font-size:.78rem;display:none;
+}
+.ng-preview .ng-word{color:var(--nguerra);font-weight:700}
+
+.note{
+  font-size:.78rem;color:var(--muted);
+  background:rgba(29,95,173,.08);border:1px solid var(--border);
+  border-radius:8px;padding:.65rem .85rem;margin-bottom:.85rem;
+}
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:.35rem;
+  padding:.65rem 1.1rem;border:none;border-radius:8px;
+  font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-gold{background:rgba(201,168,76,.15);color:var(--gold);border:1px solid rgba(201,168,76,.4)}
+.btn-gold:active{background:rgba(201,168,76,.28)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border)}
+.btn-ghost:active{color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:.4rem .75rem;font-size:.7rem}
+.btn-xs{padding:.28rem .55rem;font-size:.64rem;border-radius:6px}
+
+/* ── PENDING CARDS ─────────────────────────────────────── */
+.req-list{display:flex;flex-direction:column;gap:.55rem}
+.req-card{
+  background:rgba(18,40,71,.6);border:1px solid var(--border);
+  border-radius:8px;padding:.7rem .85rem;
+}
+.req-top{display:flex;align-items:flex-start;gap:.5rem;margin-bottom:.25rem}
+.req-grad{font-size:.68rem;font-weight:700;color:var(--gold);text-transform:uppercase}
+.req-dt{font-size:.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-left:auto}
+.req-nome{font-size:.85rem;font-weight:600;margin-bottom:.15rem}
+.req-sub{font-size:.68rem;color:var(--muted);font-family:'IBM Plex Mono',monospace}
+.req-obs{font-size:.72rem;color:var(--silver);margin-top:.3rem;font-style:italic}
+.req-acts{display:flex;gap:.4rem;margin-top:.5rem}
+
+/* ── CONFIRM ───────────────────────────────────────────── */
+.cfm-icon{font-size:2rem;text-align:center;margin:.5rem 0 .25rem}
+.cfm-msg{font-size:.88rem;color:var(--muted);text-align:center;line-height:1.5}
+
+/* ── TOASTS ────────────────────────────────────────────── */
+#toasts{
+  position:fixed;bottom:calc(5.5rem + var(--sab));left:50%;
+  transform:translateX(-50%);z-index:300;
+  display:flex;flex-direction:column;gap:.4rem;
+  width:calc(100% - 2rem);max-width:400px;pointer-events:none;
+}
+.toast{
+  background:var(--mid);border:1px solid var(--border);
+  border-radius:10px;padding:.7rem .95rem;
+  font-size:.8rem;display:flex;align-items:center;gap:.5rem;
+  box-shadow:0 8px 24px rgba(0,0,0,.45);
+  animation:toastIn .2s ease;pointer-events:auto;
+}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.toast.ok {border-left:3px solid var(--ok)}
+.toast.err{border-left:3px solid var(--danger)}
+.toast.inf{border-left:3px solid var(--accent)}
+.toast.wrn{border-left:3px solid var(--warn)}
+
+/* pending badge */
+.pbadge{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--danger);color:#fff;border-radius:100px;
+  min-width:16px;height:16px;font-size:.6rem;font-weight:700;
+  padding:0 4px;margin-left:.3rem;
+}
+
+mark{background:rgba(29,95,173,.3);color:var(--glow);border-radius:2px;padding:0 1px}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--steel);border-radius:2px}
+</style>
+  <!-- Supabase JS client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════ -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">★</div>
+    <div class="header-text">
+      <h1>Quadro de Efetivo</h1>
+      <p>Graduação · RG · v4.0</p>
+    </div>
+    <div class="header-actions">
+      <button class="hbtn gold" id="btnAdmin" onclick="openAdminLogin()">🔒 Admin</button>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════ MAIN ══════════════ -->
+<main class="main" id="appRoot">
+
+  <!-- Admin banner -->
+  <div class="admin-banner" id="adminBanner">
+    <span class="ab-label">★ Modo Administrador</span>
+    <div class="ab-btns">
+      <button class="btn btn-gold btn-sm" id="btnPending" onclick="openPending()" style="display:none">
+        📋 Solicitações<span class="pbadge" id="pbCount">0</span>
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="adminLogout()">Sair</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-row">
+    <div class="search-wrap">
+      <span class="si">🔍</span>
+      <input type="search" id="searchInput" placeholder="Buscar por nome ou RG…"
+             autocomplete="off" inputmode="search"/>
+    </div>
+  </div>
+
+  <!-- Grad filter chips -->
+  <div class="chips" id="chips"></div>
+
+  <!-- Meta -->
+  <div class="meta">
+    <span>Exibindo <span class="cnt" id="cnt">0</span> militar(es)</span>
+    <span id="searchLabel"></span>
+  </div>
+
+  <!-- Cards -->
+  <div class="cards" id="cardList"></div>
+  <div class="empty" id="empty" style="display:none">
+    <div class="ic">🔎</div><p>Nenhum militar encontrado.</p>
+  </div>
+
+</main>
+
+<!-- FAB usuário -->
+<button class="fab" id="fabUser" onclick="openRequest()" title="Solicitar inclusão">＋</button>
+<!-- FAB admin -->
+<button class="fab gold" id="fabAdmin" onclick="openAdd()" title="Incluir militar" style="display:none">＋</button>
+
+<!-- ════════════ SHEET: Login Admin ═══════════════════════ -->
+<div class="overlay" id="shLogin">
+  <div class="sheet" style="max-height:58dvh">
+    <div class="handle"></div>
+    <div class="sh-hdr">
+      <span class="sh-title gold">🔐 Acesso Admin</span>
+      <button class="sh-close" onclick="close_('shLogin')">✕</button>
+    </div>
+    <div class="sh-body">
+      <p style="font-size:.82rem;color:var(--muted);text-align:center;margin-bottom:1rem">
+        Insira a senha de administrador.
+      </p>
+      <div class="fg">
+        <label>Senha</label>
+        <input type="password" id="loginPwd" placeholder="••••••••"
+               onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <p style="font-size:.64rem;color:var(--muted);text-align:center;font-family:'IBM Plex Mono',monospace">
+        Padrão: <strong style="color:var(--gold)">admin123</strong>
+      </p>
+    </div>
+    <div class="sh-foot">
+      <button class="btn btn-ghost" onclick="close_('shLogin')">Cancelar</button>
+      <button class="btn btn-gold"  onclick="doLogin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SHEET: Incluir Militar (Admin) ══════════ -->
+<div class="overlay" id="shAdd">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sh-hdr">
+      <span class="sh-title gold">★ Incluir Militar</span>
+      <button class="sh-close" onclick="close_('shAdd')">✕</button>
+    </div>
+    <div class="sh-body">
+      <div class="fg-row">
+        <div class="fg">
+          <label>Graduação ✱</label>
+          <select id="aGrad"><option value="">Selecione…</option></select>
+        </div>
+        <div class="fg">
+          <label>Quadro</label>
+          <input type="text" id="aQuadro" placeholder="Q02/00"
+                 oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Nome Completo ✱</label>
+        <input type="text" id="aNome" placeholder="JOAO DA SILVA"
+               oninput="this.value=this.value.toUpperCase();updateNgPreview('add')"/>
+      </div>
+      <div class="fg">
+        <label>Nome de Guerra</label>
+        <input type="text" id="aNguerra" placeholder="Ex: LOURENCO"
+               oninput="this.value=this.value.toUpperCase();updateNgPreview('add')"/>
+        <div class="fg-hint">Palavra que aparecerá destacada no nome completo</div>
+        <div class="ng-preview" id="addNgPreview">
+          Prévia: <span id="addNgText"></span>
+        </div>
+      </div>
+      <div class="fg">
+        <label>RG ✱</label>
+        <input type="text" id="aRg" placeholder="12345" inputmode="numeric"/>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn btn-ghost" onclick="close_('shAdd')">Cancelar</button>
+      <button class="btn btn-gold"  onclick="saveMilitar()">Incluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SHEET: Editar Militar (Admin) ═══════════ -->
+<div class="overlay" id="shEdit">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sh-hdr">
+      <span class="sh-title gold">✏ Editar Militar</span>
+      <button class="sh-close" onclick="close_('shEdit')">✕</button>
+    </div>
+    <div class="sh-body">
+      <input type="hidden" id="eId"/>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Graduação ✱</label>
+          <select id="eGrad"></select>
+        </div>
+        <div class="fg">
+          <label>Quadro</label>
+          <input type="text" id="eQuadro"
+                 oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Nome Completo ✱</label>
+        <input type="text" id="eNome"
+               oninput="this.value=this.value.toUpperCase();updateNgPreview('edit')"/>
+      </div>
+      <div class="fg">
+        <label>Nome de Guerra</label>
+        <input type="text" id="eNguerra" placeholder="Ex: LOURENCO"
+               oninput="this.value=this.value.toUpperCase();updateNgPreview('edit')"/>
+        <div class="fg-hint">Palavra destacada no nome completo</div>
+        <div class="ng-preview" id="editNgPreview">
+          Prévia: <span id="editNgText"></span>
+        </div>
+      </div>
+      <div class="fg">
+        <label>RG ✱</label>
+        <input type="text" id="eRg" inputmode="numeric"/>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn btn-ghost" onclick="close_('shEdit')">Cancelar</button>
+      <button class="btn btn-gold"  onclick="updateMilitar()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SHEET: Solicitar Inclusão (Usuário) ═════ -->
+<div class="overlay" id="shRequest">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sh-hdr">
+      <span class="sh-title">📨 Solicitar Inclusão</span>
+      <button class="sh-close" onclick="close_('shRequest')">✕</button>
+    </div>
+    <div class="sh-body">
+      <div class="note">
+        ℹ Sua solicitação será analisada pelo Administrador, que confirmará a inclusão.
+      </div>
+      <div class="fg-row">
+        <div class="fg">
+          <label>Graduação ✱</label>
+          <select id="rGrad"><option value="">Selecione…</option></select>
+        </div>
+        <div class="fg">
+          <label>Quadro</label>
+          <input type="text" id="rQuadro" placeholder="Q02/00"
+                 oninput="this.value=this.value.toUpperCase()"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Nome Completo ✱</label>
+        <input type="text" id="rNome" placeholder="JOAO DA SILVA"
+               oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+      <div class="fg">
+        <label>RG ✱</label>
+        <input type="text" id="rRg" placeholder="12345" inputmode="numeric"/>
+      </div>
+      <div class="fg">
+        <label>Observações</label>
+        <textarea id="rObs" placeholder="Informações adicionais…"
+                  oninput="this.value=this.value.toUpperCase()"></textarea>
+      </div>
+    </div>
+    <div class="sh-foot">
+      <button class="btn btn-ghost"   onclick="close_('shRequest')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitRequest()">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SHEET: Solicitações Pendentes (Admin) ═══ -->
+<div class="overlay" id="shPending">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="sh-hdr">
+      <span class="sh-title gold">📋 Solicitações</span>
+      <button class="sh-close" onclick="close_('shPending')">✕</button>
+    </div>
+    <div class="sh-body" id="pendingBody"></div>
+    <div class="sh-foot">
+      <button class="btn btn-ghost" onclick="close_('shPending')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SHEET: Confirmar Exclusão ═══════════════ -->
+<div class="overlay" id="shConfirm">
+  <div class="sheet" style="max-height:50dvh">
+    <div class="handle"></div>
+    <div class="sh-hdr">
+      <span class="sh-title">Confirmar Exclusão</span>
+      <button class="sh-close" onclick="close_('shConfirm')">✕</button>
+    </div>
+    <div class="sh-body">
+      <div class="cfm-icon">⚠️</div>
+      <p class="cfm-msg" id="confirmMsg"></p>
+    </div>
+    <div class="sh-foot">
+      <button class="btn btn-ghost"  onclick="close_('shConfirm')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmOk">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<!-- ═══════════════════════════ JAVASCRIPT ═══════════════ -->
+<script>
+/* ── CONSTANTES ─────────────────────────────────────────── */
+const PASS = 'admin123'; // ← altere aqui antes de publicar
+
+// ▼▼▼ COLE AQUI AS SUAS CHAVES DO SUPABASE ▼▼▼
+const SUPABASE_URL     = 'https://aelprslvvaoaxqlpgquj.supabase.co/rest/v1/';        // ex: https://xyzxyz.supabase.co
+const SUPABASE_ANON    = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbHByc2x2dmFvYXhxbHBncXVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5OTQ0NzMsImV4cCI6MjA5NTU3MDQ3M30.Ud1IL6IFD2iutdzsdrsV18r6GhDQdjVjN8VtrMp589s';   // chave pública (leitura)
+const SUPABASE_SERVICE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFlbHByc2x2dmFvYXhxbHBncXVqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTk5NDQ3MywiZXhwIjoyMDk1NTcwNDczfQ.0zoEh4ZsJGr2LPv5djmAigHB9fm3Tc1qYsgp8y1pU50';   // chave secreta (admin)
+// ▲▲▲ ──────────────────────────────────────── ▲▲▲
+
+// Clientes Supabase — um para leitura pública, outro para operações admin
+const sbPublic  = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+let   sbAdmin   = null; // criado apenas após login admin
+
+// Chave de fallback local (usado se Supabase não estiver configurado)
+const LS_DATA = 'efetivo_v4';
+const LS_REQS = 'efetivo_reqs_v4';
+
+/* Ordem hierárquica das graduações */
+const GRAD_ORDER = [
+  'CORONEL','TENENTE CORONEL','MAJOR','CAPITÃO',
+  '1º TENENTE','2º TENENTE','ASPIRANTE',
+  'SUBTENENTE',
+  '1º SARGENTO','2º SARGENTO','3º SARGENTO',
+  'CABO','SOLDADO'
+];
+
+function stripeClass(g){
+  if(['CORONEL','TENENTE CORONEL','MAJOR','CAPITÃO','1º TENENTE','2º TENENTE','ASPIRANTE'].includes(g)) return 's-oficial';
+  if(g==='SUBTENENTE') return 's-sub';
+  if(g.includes('SARGENTO')) return 's-sgt';
+  if(g==='CABO') return 's-cb';
+  return 's-sd';
+}
+
+/* ── DADOS INICIAIS ─────────────────────────────────────── */
+const INIT_RAW = `1\tSUBTENENTE Q00/00 DANILO LIMA MOLINO\t27631
+2\tSUBTENENTE Q11/98 ANTONIO CARLOS DE SOUZA RIBEIRO\t24408
+3\tSUBTENENTE Q02/00 JOSE GORGES GOTARDO\t27577
+4\tSUBTENENTE Q01/00 ANGELO ROMULO DE OLIVEIRA\t27586
+5\tSUBTENENTE Q09/97 LUCIANO BORGES DE CARVALHO\t21004
+6\tSUBTENENTE Q00/00 LUIZ GUSTAVO DE REZENDE\t27572
+7\tSUBTENENTE Q01/00 SAMUEL DOS SANTOS MENDES JUNIOR\t27649
+8\tSUBTENENTE Q02/02 PAULO CESAR DE CARVALHO MALTA\t31878
+9\tSUBTENENTE Q09/00 JOSÉ FABRICIO DA SILVA\t27639
+10\tSUBTENENTE Q00/97 ALEXSANDRE ARAUJO DA SILVA\t21684
+11\tSUBTENENTE Q02/02 CLEBER CRISTIANO AGUIAR SILVA\t31869
+12\tSUBTENENTE Q02/02 MARCELO CANDIDO DA SILVA\t31877
+13\tSUBTENENTE Q01/00 LEO LAINA DA COSTA\t27596
+14\tSUBTENENTE Q02/95 CLEIBE SAMPAIO BARBOSA\t18881
+15\tSUBTENENTE Q00/98 RENE GIARDINI\t11111
+16\tSUBTENENTE Q00/00 MARCIO STUMPF\t27606
+17\tSUBTENENTE Q00/97 MARCIO BOARETTO PIRES DE OLIVEIRA\t20906
+18\tSUBTENENTE Q00/00 LEONARDO DE MELO LOPES\t27624
+19\tSUBTENENTE Q01/97 MARCO AURELIO DA SILVA BOARETO\t20902
+20\tSUBTENENTE Q00/97 BRUNO CESAR CARVALHO\t21036
+21\tSUBTENENTE Q01/97 JOSEIR VELOZO DONATO\t21008
+22\tSUBTENENTE Q00/97 REINALDO LUIS DE ALMEIDA\t21010
+23\tSUBTENENTE Q00/97 WENDEL TENENTE DE AZEVEDO\t22404
+24\tSUBTENENTE Q02/02 JORGE GENTIL NEVES DOS SANTOS\t31860
+25\tSUBTENENTE Q00/08 JORGE LUIS MONTEIRO BARILLO\t43909
+26\tSUBTENENTE Q00/97 LEANDRO MOTA DA SILVA\t22421
+27\tSUBTENENTE Q00/00 ANDERSON DOS SANTOS SOBREIRA\t27600
+28\tSUBTENENTE Q00/00 LEANDRO AMARAL DOS SANTOS\t27608
+29\tSUBTENENTE BM Q00/97 JOSEMAR DE RESENDE MUNIZ\t22409
+30\tSUBTENENTE BM Q00/97 HENRIQUE AREIAS PONTES\t20625
+31\tSUBTENENTE Q00/97 FABIANO LOURO MOREIRA\t20992
+32\tSUBTENENTE Q00/97 CLAUSIO MARCELO BARROS RIBEIRO\t21001
+33\tSUBTENENTE Q00/97 EVERSON LUIZ FERREIRA LOURENCO\t21002
+34\tSUBTENENTE BM Q00/97 MARCELO DE MELO LEAL\t21006
+35\tSUBTENENTE Q00/97 JOSE RICARDO SERCIO PEDRO\t21007
+36\tSubten BM Q00/97 RAIMUNDO TAVARES JUNIOR\t21011
+37\tSUBTENENTE Q09/97 MARCIO NUNES BARBOSA\t21013
+38\tSUBTENENTE Q05/97 JULIO CESAR MARQUES DE SOUZA\t21020
+39\tSUBTENENTE Q05/97 ITAMAR DOS SANTOS\t21023
+40\tSUBTENENTE Q00/97 RONDINEI CANDIDO DA SILVA\t21024
+41\tSUBTENENTE Q05/97 MARCELO DA SILVA\t21025
+42\tSUBTENENTE Q09/97 DANIEL PALHA BASTOS\t21026
+43\tSUBTENENTE Q00/97 EDUARDO BARBOSA\t21027
+44\tSUBTENENTE Q09/97 GUELBER DIAS GARCIA\t21031
+45\tSUBTENENTE Q09/97 FABRICIO CERQUEIRA RIBEIRO\t21082
+46\tSUBTENENTE Q00/97 MARCIO VINICIO DA SILVA\t21033
+47\tSUBTENENTE Q00/97 LEANDRO BERNARDINO DA SILVA\t20991
+48\tSUBTENENTE Q09/97 JOSÉ DE BARROS FRANCO NETO\t20997
+49\tSUBTENENTE Q09/97 ADRIANO FERREIRA FARSURA\t22254
+50\tSUBTENENTE Q09/97 CLEBER MAYWORM GERALDO\t22402
+51\tSUBTENENTE Q00/97 FELIPE MOURÃO DE LIMA\t22403
+52\tSUBTENENTE Q07/97 PAULO HENRIQUE BASTOS ROCHA\t22405
+53\tSUBTENENTE Q01/97 LUIZ CARLOS ROSA JUNIOR\t22411
+54\tSUBTENENTE BM Q02/97 EITEL SÁ CORREA\t22429
+55\tSUBTENENTE BM Q00/98 MARCELO EUGENIO DE ALMEIDA\t24182
+56\tSUBTENENTE Q00/98 ANTONIO BARBOSA FERREIRA\t24340
+57\tSUBTENENTE Q00/98 WAGNER LUIZ TARDY VIDAL\t24338
+58\tSUBTENENTE Q02/98 MARCIO DA SILVA MENDES\t24434
+59\tSUBTENENTE Q02/98 MARCIO VALANI ARAUJO\t24396
+60\tSUBTENENTE Q00/99 WESLEY AMARAL SILVA\t25704
+61\tSUBTENENTE Q00/99 ALEX SANDRO GERONIMO DE ALMEIDA\t25726
+62\tSUBTENENTE Q00/00 MILTON DE SOUZA DIAS FILHO\t27580
+63\tSUBTENENTE Q00/00 RICARDO DE ANDRADE SOARES\t27319
+64\tSUBTENENTE Q00/00 ROGERIO CANDIDO DA SILVA\t27598
+65\tSUBTENENTE Q00/00 BRUNO MONTENEGRO FAGUNDES\t27581
+66\tSUBTENENTE Q00/00 DANIEL OZEIAS SANTOS RODRIGUES\t27593
+67\tSUBTENENTE Q00/00 WAGNER LUCIO JUNIOR\t27595
+68\tSUBTENENTE Q00/00 MICHEL ROBSON DA SILVA COELHO\t27610
+69\tSUBTENENTE Q00/00 ANDRE CARVALHO ROCHA\t27612
+70\tSUBTENENTE Q00/00 DOUGLAS DE OLIVEIRA ALMEIDA\t27619
+71\tSUBTENENTE Q00/00 TIAGO MEIRELLES DE SOUZA\t27626
+72\tSUBTENENTE Q00/00 MARCELO MAUDSLAY\t22222
+73\tSUBTENENTE Q00/00 LEVI DA SILVA\t27576
+74\tSUBTENENTE Q00/00 ANDRI DE PADUA DAUD\t27590
+75\tSUBTENENTE Q05/00 ELDER BITTENCOURT DA COSTA\t27623
+76\tSUBTENENTE Q00/00 ADAUTO RAMPINI JUNIOR\t27635
+77\tSUBTENENTE Q00/00 KATIA MARTINS DA SILVA\t33333
+78\t1º SARGENTO Q01/02 IZABELA MACHADO\t30666
+79\t1º SARGENTO Q02/02 FREDERICO DE MELLO PEREIRA\t31776
+80\t1º SARGENTO Q02/02 ROBSON GOUVEIA GOES\t31851
+81\t1º SARGENTO Q02/02 PAULO RENATO RODRIGUES\t31864
+82\t1º SARGENTO Q05/02 VALQUIRIA CRISTINE FAGUNDES DOS SANTOS\t32907
+83\t2º SARGENTO Q00/00 LEONARDO CESAR ALMEIDA DE ALMEIDA\t27533
+84\t3º SARGENTO Q00/98 LUIZ HENRIQUE PEREIRA DOS REIS\t24357
+85\t2º SARGENTO BM Q02/08 EDSON VILARINO DA CRUZ\t43137
+86\t2º SARGENTO Q02/08 DIEGO CARMO DE PAULA\t42662
+87\t2º SARGENTO Q06/AxE/08 GUSTAVO ONOFRE SEVERIANO XAVIER\t42796
+88\t2º SARGENTO Q06/AxE/08 ANDERSON CESAR SILVA COELHO\t42956
+89\t2º SARGENTO Q02/08 RODRIGO ALVES ESTEVES\t43175
+91\t2º SARGENTO Q02/08 RAMON DOS SANTOS MOREIRA\t43178
+92\t2º SARGENTO Q02/08 PABLO SAMAGAIO DA SILVA\t43205
+93\t2º SARGENTO Q02/08 ALAN MANZINI DE OLIVEIRA\t43216
+94\t2º SARGENTO Q02/08 LEANDRO HUDSON PEREIRA\t43309
+95\t2º SARGENTO Q02/08 BRUNO MARQUES DOS SANTOS\t43362
+96\t2º SARGENTO Q02/08 ADILSON MACHADO SILVA\t43505
+97\t2º SARGENTO Q02/08 CLEBER JOSE MATIOLLI\t43558
+98\t2º SARGENTO Q02/08 MARCIO AURELIO OLIVEIRA CHIARETTI\t43575
+99\t2º SARGENTO Q02/08 ANTONIO CARLOS DOS REIS ALVES\t43595
+100\t2º SARGENTO Q02/08 JULIO CESAR ALVARAES MUSSEL\t43597
+101\t2º SARGENTO Q01/08 ROBSON LUIZ MEDEIROS DA SILVA\t43955
+102\t2º SARGENTO Q00/08 ESDRAS DE SOUZA CLER CHRISTOVAO\t44038
+103\t2º SARGENTO BM Q00/08 DANILO ALVES XAVIER SALERNO\t44236
+104\t2º SARGENTO Q01/08 GUILHERME LUIZ TEIXEIRA DA SILVA\t44337
+105\t2º SARGENTO Q00/08 TACIO FELIPE PANNO SILVEIRA\t44706
+106\t3º SARGENTO Q01/09 QUELTON CARLOS DA SILVA ROCHA\t45539
+107\t2º SARGENTO BM Q06/AxE/09 DANIELA BRANCO HONORIO GONÇALVES\t44861
+108\t3º SARGENTO Q02/13 CLEITON GOMES DE SOUSA\t49047
+109\t3º SARGENTO Q02/13 CARLOS ANDRE FERREIRA COSTA\t49072
+110\tCABO Q00/14 SILAS FERREIRA DE CARVALHO\t49462
+111\tCABO BM Q00/14 MARCOS CESAR MORAIS LIMA\t49543
+112\tCABO Q00/14 WELLINGTON DE AQUINO ANTONIO FILHO\t49640
+113\tCABO Q00/14 LEANDRO PEREIRA GONÇALVES\t49567
+114\tCABO Q00/14 MAXWEL FIDELIS DE OLIVEIRA\t49598
+115\tCABO Q00/14 JOSIAS FERREIRA SIQUEIRA LUNA\t49645
+116\tCABO Q02/14 RAFAEL DA SILVA PIRES\t49740
+117\tCABO Q02/14 RAFAEL DA SILVA FERREIRA\t49743
+118\tCABO Q02/14 ANDRE FELIPE FORGE EVANGELISTA\t49788
+119\tCABO Q02/14 CARLOS EDUARDO PEREIRA DE ALMEIDA\t49843
+120\tCABO Q02/14 RAFAEL MACHADO LIMA\t49849
+121\tCABO Q02/ RENATO BESSA DA SILVEIRA\t53649
+122\tSOLDADO Q00/21 CASSIO GONCALVES FERREIRA\t53746
+123\tSOLDADO Q00/21 HELLAN BORGES DOS SANTOS\t53766
+124\tSOLDADO BM TEMP/00/22 PATRICK MORAES DA COSTA DE SOUZA\t2200370
+125\tSOLDADO TEMP/00/22 LUAN MENDES BITENCOURT\t2200530
+126\tSOLDADO TEMP/00/22 YVES GABRIEL DO NASCIMENTO DE OLIVEIRA\t2200540
+127\tSOLDADO TEMP/00/22 JULIO CESAR CAETANO DA SILVA FILHO\t2200543
+128\tSOLDADO TEMP/00/22 LUCAS MAYWORM SAGGIORO\t2200554
+129\tSOLDADO TEMP/00/22 PEDRO HENRIQUE BORGES AZEVEDO\t2200555
+130\tSOLDADO TEMP/00/22 LUIZ CARLOS MOREIRA DA SILVA\t2200556
+131\tSOLDADO TEMP/00/22 FILIPE GONÇALVES GIRÃO\t2200559
+132\tSOLDADO TEMP/00/22 HUGO DE ALMEIDA RODRIGUES\t2200561
+133\tSOLDADO TEMP/00/22 CAUÃ LUIZ CORRÊA E CASTRO\t2200567
+134\tSOLDADO TEMP/00/22 IVANILSON ROCHA MENDONÇA\t2200576
+135\tSOLDADO TEMP/00/22 ANDRÉ LIMA HUFNAGEL TERRA\t2200634
+136\tSOLDADO TEMP/00/22 LUCAS DE MELO CAMARGO\t2201071
+137\tSOLDADO TEMP/00/22 THIAGO CRUZ MENDONÇA\t2201078
+138\tSOLDADO BM TEMP/00/22 DAVID ÁBNER SOUZA RITES\t2201080
+139\tSOLDADO TEMP/00/22 EDSON SANTOS DO ROSARIO\t2201083
+140\tSOLDADO TEMP/00/22 GILL DE ARRUDA SANTOS\t2201086
+141\tSOLDADO TEMP/00/22 RENAN SILVA DE SOUZA\t2201088
+142\tSOLDADO Q07/24 PEDRO HENRIQUE JANIQUES\t54024
+143\tSOLDADO Q07/24 RAFAEL DAMACENA DA SILVA\t54056
+144\tSOLDADO Q07/24 HUGO REIS VICENTE DE SOUSA\t54059
+145\tSOLDADO Q07/24 AYRTON GABRIEL LIMA DOS SANTOS\t54067
+146\tSOLDADO Q02/24 WILLIAN SOUZA DA SILVA\t54087
+147\tSOLDADO Q00/24 THIAGO DA SILVA COSTA\t54498
+148\tSOLDADO Q02/24 WASHINGTON LUIS ARAUJO DA SILVA JUNIOR\t54135
+149\tSOLDADO Q02/24 BRUNO COSTA DO NASCIMENTO\t54176
+150\tSOLDADO Q02/24 LUCAS DA SILVA PORTUGAL\t54189
+151\tSOLDADO Q02/24 RAFAEL VIEIRA DA MATTA\t54212
+152\tSOLDADO Q02/24 HYGOR SOARES MACHADO\t54271
+153\tSOLDADO Q02/24 WILLIAN MARTINS DE MENEZES\t54278
+154\tSOLDADO Q02/24 MATHEUS JOSÉ SOUSA DA COSTA\t54282
+155\tSOLDADO Q02/24 VINICIUS RIBEIRO NUNES\t54287
+156\tSOLDADO Q03/24 MATHEUS SOARES DOTTA DE OLIVEIRA\t54499
+157\tSOLDADO Q03/24 RAFAEL RODRIGUES DA SILVA\t54513
+158\tSOLDADO Q03/24 LORRAINE SANTANA CAMPOS\t54524
+159\tSOLDADO Q03/24 WELLERSON MATHEUS DA SILVA\t54556
+160\tSOLDADO Q05/24 DEIVISON DIÓGENES VASCONCELOS DA SILVA SANTOS\t54655
+161\tSOLDADO Q03/24 ROBERTO CARVALHO FERREIRA JUNIOR\t54634
+162\tSOLDADO Q08/25 LUCAS NUNES EMIDIO ESTRELA\t54972
+163\tSOLDADO Q08/25 HUGO GOMES BARREIROS\t54992
+164\tSOLDADO Q08/25 IGOR DA SILVA RODRIGUES\t55003
+165\tSOLDADO Q08/25 DAVI MENDES DA SILVA\t55013
+166\tSOLDADO BM Q02/25 RODRIGO SILVA DE MOURA\t54861
+167\tSOLDADO BM Q02/25 GUSTAVO LIRA DE CARVALHO\t54902
+168\tSOLDADO BM Q02/25 THIAGO OLIVEIRA GOMES PESSANHA\t54906
+169\tSOLDADO BM Q02/25 ROMULO FRANCISCO ESTEVES\t60990
+170\tSOLDADO BM Q02/25 CLEMILSON MARQUES PACHECO FERREIRA\t61012
+171\tSOLDADO BM Q02/25 LEONY SANTOS ARAGAO HENRIQUE\t61016
+172\tSOLDADO BM Q02/25 ERICK CAPUTO LIMA\t61051
+173\tSOLDADO BM Q02/25 ALEXSANDER SOUSA SORIANO DE LIMA\t61179
+174\tSOLDADO BM Q02/25 ANDRE ILSON DOS SANTOS AUGUSTO\t61206
+175\tSOLDADO BM Q02/25 LUAN FERREIRA DA CRUZ\t61317
+176\tSOLDADO BM Q02/25 REGINALDO DA SILVA MAGALHAES\t61365`;
+
+/* ── PARSER ─────────────────────────────────────────────── */
+function normGrad(raw){
+  // Remove "BM" e variações, normaliza abreviações
+  let g=raw.replace(/\bBM\b/gi,'').replace(/\s+/g,' ').trim().toUpperCase();
+  const map={'SUBTEN':'SUBTENENTE','CB':'CABO','SD':'SOLDADO'};
+  return map[g]||g;
+}
+
+function parseInit(){
+  const seen=new Set(), recs=[];
+  INIT_RAW.split('\n').forEach(line=>{
+    const p=line.split('\t'); if(p.length<3) return;
+    const rest=p[1].trim(), rg=p[2].trim();
+    if(seen.has(rg)) return; seen.add(rg);
+    // parse: GRAD [BM] Qxx/xx NOME
+    const m=rest.match(/^(.+?)\s+((?:TEMP|Q)[^\s]+)\s+(.+)$/i);
+    let graduacao='',quadro='',nome='';
+    if(m){
+      graduacao=normGrad(m[1]);
+      quadro=m[2].trim().toUpperCase();
+      nome=m[3].trim().toUpperCase();
+    } else {
+      const w=rest.split(/\s+/);
+      graduacao=normGrad(w[0]);
+      nome=w.slice(1).join(' ').toUpperCase();
+    }
+    recs.push({id:uid(),graduacao,quadro,nome,rg,nguerra:''});
+  });
+  return recs;
+}
+
+const uid=()=>Math.random().toString(36).slice(2)+Date.now().toString(36);
+
+/* ── ESTADO ─────────────────────────────────────────────── */
+let data=[],reqs=[],isAdmin=false,filterGrad='TODOS',delTarget=null;
+
+/* ── HELPER: Supabase configurado? ─────────────────────── */
+function sbReady(){
+  return SUPABASE_URL !== 'COLE_SUA_URL_AQUI' && SUPABASE_URL.startsWith('https://');
+}
+
+/* ── CARREGAR DADOS ─────────────────────────────────────── */
+async function load(){
+  showLoading(true);
+  if(sbReady()){
+    try{
+      // Militares — leitura pública
+      const {data:rows, error} = await sbPublic
+        .from('militares')
+        .select('*')
+        .order('created_at', {ascending:true});
+      if(error) throw error;
+      data = rows.map(r=>({
+        id:       r.id,
+        graduacao:r.graduacao,
+        quadro:   r.quadro||'',
+        nome:     r.nome,
+        rg:       r.rg,
+        nguerra:  r.nguerra||''
+      }));
+      // Solicitações só o admin pode ler — carregamos após login
+    } catch(e){
+      console.error('Supabase load error:',e);
+      toast('Erro ao carregar dados. Usando cache local.','wrn');
+      loadLocal();
+    }
+  } else {
+    loadLocal(); // fallback localStorage
+  }
+  showLoading(false);
+  render();
+}
+
+function loadLocal(){
+  try{data=JSON.parse(localStorage.getItem(LS_DATA)||'[]');}catch{data=[];}
+  if(!data.length){data=parseInit();saveLocal();}
+  data.forEach(m=>{if(m.nguerra===undefined)m.nguerra='';});
+  try{reqs=JSON.parse(localStorage.getItem(LS_REQS)||'[]');}catch{reqs=[];}
+}
+
+/* ── SALVAR — militares ─────────────────────────────────── */
+async function save(){
+  if(!sbReady()){ saveLocal(); return; }
+  // Supabase: upsert do array completo
+  // (feito individualmente nas funções add/edit/delete)
+}
+function saveLocal(){ localStorage.setItem(LS_DATA,JSON.stringify(data)); }
+
+/* ── SALVAR — solicitações ──────────────────────────────── */
+async function saveReqs(){
+  if(!sbReady()){ localStorage.setItem(LS_REQS,JSON.stringify(reqs)); }
+}
+
+/* ── CARREGAR SOLICITAÇÕES (admin) ──────────────────────── */
+async function loadReqs(){
+  if(!sbReady()||!sbAdmin){ reqs=[]; return; }
+  try{
+    const {data:rows,error}=await sbAdmin
+      .from('solicitacoes')
+      .select('*')
+      .eq('status','pendente')
+      .order('created_at',{ascending:true});
+    if(error) throw error;
+    reqs=rows.map(r=>({
+      id:r.id, grad:r.graduacao, quad:r.quadro||'',
+      nome:r.nome, rg:r.rg, obs:r.obs||'',
+      dt:new Date(r.created_at).toLocaleDateString('pt-BR')
+    }));
+  } catch(e){ console.error(e); reqs=[]; }
+}
+
+/* ── LOADING INDICATOR ──────────────────────────────────── */
+function showLoading(on){
+  let el=document.getElementById('loadingBar');
+  if(!el){
+    el=document.createElement('div');
+    el.id='loadingBar';
+    el.style.cssText='position:fixed;top:0;left:0;height:3px;background:var(--gold);z-index:999;transition:width .3s';
+    document.body.appendChild(el);
+  }
+  el.style.width = on ? '70%' : '100%';
+  if(!on) setTimeout(()=>el.style.width='0',300);
+}
+
+/* ── ORDENAÇÃO: grad hierarquia → RG numérico crescente ─── */
+function gradRank(g){const i=GRAD_ORDER.indexOf(g);return i===-1?99:i;}
+function rgNum(rg){return parseInt(String(rg).replace(/\D/g,''),10)||0;}
+
+function sortedData(arr){
+  return [...arr].sort((a,b)=>{
+    const gr=gradRank(a.graduacao)-gradRank(b.graduacao);
+    if(gr!==0) return gr;
+    return rgNum(a.rg)-rgNum(b.rg);
+  });
+}
+
+/* ── FILTRO ─────────────────────────────────────────────── */
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  return sortedData(data.filter(m=>{
+    if(filterGrad!=='TODOS'&&m.graduacao!==filterGrad) return false;
+    if(!q) return true;
+    return m.rg.toLowerCase().includes(q)||
+           m.nome.toLowerCase().includes(q)||
+           (m.nguerra&&m.nguerra.toLowerCase().includes(q))||
+           m.graduacao.toLowerCase().includes(q);
+  }));
+}
+
+/* ── NOME DE GUERRA: destaca tokens no nome completo ────────
+ *
+ * Suporta três formatos de Nome de Guerra:
+ *
+ *  1. Palavra única   → "LOURENCO"
+ *     Destaca a palavra inteira no nome.
+ *
+ *  2. Abreviação + palavra(s) → "M SILVA" ou "A C RIBEIRO"
+ *     Cada token de 1 letra é tratado como inicial do nome completo:
+ *     "M" bate com qualquer palavra que comece com M.
+ *     As palavras correspondentes são destacadas individualmente.
+ *
+ *  3. Múltiplas palavras não-contíguas → "CARLOS SOUZA"
+ *     Cada token (com 2+ letras) é buscado independentemente no nome
+ *     completo. Todas as correspondências são destacadas.
+ *
+ * O algoritmo trabalha em nível de token (palavra) para evitar
+ * ambiguidade e conflito com o highlight de busca.
+ * ──────────────────────────────────────────────────────────── */
+
+/**
+ * Divide uma string em tokens de palavras com suas posições.
+ * Retorna [{word, start, end}, ...]
+ */
+function tokenize(str){
+  const tokens=[];
+  const re=/\S+/g;
+  let m;
+  while((m=re.exec(str))!==null){
+    tokens.push({word:m[0].toUpperCase(), start:m.index, end:m.index+m[0].length});
+  }
+  return tokens;
+}
+
+/**
+ * Resolve quais trechos do nome completo devem ser destacados
+ * e com qual texto do Nome de Guerra (exatamente como digitado).
+ *
+ * Retorna array de matches: { nameStart, nameEnd, ngText }
+ *   nameStart / nameEnd → posição no nome completo a ser "coberta"
+ *   ngText              → texto do Nome de Guerra a exibir no lugar
+ *
+ * Regras por token do Nome de Guerra:
+ *   1 letra  → inicial: casa com a 1ª letra da palavra do nome.
+ *              O span exibe apenas a inicial (ex: "M"), o resto da
+ *              palavra fica fora do span.
+ *   2+ letras → palavra exata: o span exibe a palavra inteira.
+ */
+function resolveMatches(nome, nguerra){
+  if(!nguerra) return [];
+
+  const nameTokens = tokenize(nome);
+  const ngTokens   = tokenize(nguerra);
+  const usedIdx    = new Set();
+  const matches    = [];
+
+  for(const ng of ngTokens){
+    const isInitial = ng.word.length === 1;
+    for(let i = 0; i < nameTokens.length; i++){
+      if(usedIdx.has(i)) continue;
+      const nt = nameTokens[i];
+      const hit = isInitial
+        ? nt.word.startsWith(ng.word)   // inicial → palavra começa com a letra
+        : nt.word === ng.word;          // exata   → palavra igual
+      if(hit){
+        usedIdx.add(i);
+        if(isInitial){
+          // destaca só a 1 letra inicial; o resto da palavra fica normal
+          matches.push({
+            nameStart: nt.start,
+            nameEnd:   nt.start + 1,   // apenas o 1º caractere
+            ngText:    ng.word          // a inicial como digitada
+          });
+        } else {
+          // destaca a palavra inteira
+          matches.push({
+            nameStart: nt.start,
+            nameEnd:   nt.end,
+            ngText:    ng.word
+          });
+        }
+        break;
+      }
+    }
+  }
+  // ordena por posição no nome para montar o HTML em sequência
+  return matches.sort((a,b) => a.nameStart - b.nameStart);
+}
+
+/**
+ * Constrói o HTML do nome completo:
+ *  - Trechos do Nome de Guerra → <span class="nguerra">texto_ng</span>
+ *    + resto da palavra (se era inicial) volta ao fluxo normal
+ *  - Highlight de busca (mark) aplicado nos segmentos não-guerra
+ */
+function buildNomeHtml(nome, nguerra, searchQ){
+  if(!nguerra) return searchQ ? hlText(nome, searchQ) : esc(nome);
+
+  const matches = resolveMatches(nome, nguerra);
+  if(!matches.length) return searchQ ? hlText(nome, searchQ) : esc(nome);
+
+  let html   = '';
+  let cursor = 0;
+
+  for(const m of matches){
+    // segmento antes do match (texto normal + highlight de busca)
+    if(m.nameStart > cursor){
+      html += searchQ
+        ? hlText(nome.slice(cursor, m.nameStart), searchQ)
+        : esc(nome.slice(cursor, m.nameStart));
+    }
+    // o trecho destacado usa o texto DO NOME DE GUERRA (ngText),
+    // não o texto do nome completo — assim "M" fica "M", não "MARCELO"
+    const warContent = searchQ ? hlText(m.ngText, searchQ) : esc(m.ngText);
+    html += `<span class="nguerra">${warContent}</span>`;
+
+    // Avança cursor até o fim da palavra completa do nome.
+    // Se era inicial (nameEnd = nameStart+1), o resto da palavra
+    // (ex: "ARCELO" de "MARCELO") sai como texto normal.
+    {
+      const spacePos = nome.indexOf(' ', m.nameStart);
+      const wordEnd  = spacePos === -1 ? nome.length : spacePos;
+      if(m.nameEnd < wordEnd){
+        const tail = nome.slice(m.nameEnd, wordEnd);
+        html += searchQ ? hlText(tail, searchQ) : esc(tail);
+      }
+      cursor = wordEnd;
+    }
+  }
+
+  // segmento após o último match
+  if(cursor < nome.length){
+    html += searchQ
+      ? hlText(nome.slice(cursor), searchQ)
+      : esc(nome.slice(cursor));
+  }
+
+  return html;
+}
+
+/**
+ * Verifica se ao menos um token do Nome de Guerra foi encontrado.
+ */
+function nguerraMatches(nome, nguerra){
+  if(!nguerra) return false;
+  return resolveMatches(nome, nguerra).length > 0;
+}
+
+function hlText(txt,q){
+  if(!q) return esc(txt);
+  const t=String(txt),lo=t.toLowerCase(),qi=q.toLowerCase();
+  const i=lo.indexOf(qi); if(i===-1) return esc(t);
+  return esc(t.slice(0,i))+'<mark>'+esc(t.slice(i,i+q.length))+'</mark>'+esc(t.slice(i+q.length));
+}
+
+/* ── PREVIEW NOME DE GUERRA (no formulário) ─────────────── */
+function updateNgPreview(mode){
+  const nomeEl   = document.getElementById(mode==='add'?'aNome':'eNome');
+  const nguerraEl= document.getElementById(mode==='add'?'aNguerra':'eNguerra');
+  const prevEl   = document.getElementById(mode==='add'?'addNgPreview':'editNgPreview');
+  const textEl   = document.getElementById(mode==='add'?'addNgText':'editNgText');
+
+  const nome   = (nomeEl.value||'').toUpperCase().trim();
+  const nguerra= (nguerraEl.value||'').toUpperCase().trim();
+
+  if(!nome||!nguerra){prevEl.style.display='none';return;}
+
+  const matched = nguerraMatches(nome, nguerra);
+  if(matched){
+    textEl.innerHTML = buildNomeHtml(nome, nguerra, '');
+  } else {
+    textEl.innerHTML = esc(nome)+
+      `<span style="color:var(--danger);font-size:.7rem;margin-left:.4rem">
+        ⚠ nenhum token encontrado no nome
+      </span>`;
+  }
+  prevEl.style.display='';
+}
+
+/* ── RENDER ─────────────────────────────────────────────── */
+function render(){
+  const q=document.getElementById('searchInput').value.trim();
+  const filtered=getFiltered();
+
+  document.getElementById('cnt').textContent=filtered.length;
+  document.getElementById('searchLabel').textContent=q?`para "${q}"`:'';
+
+  renderChips();
+
+  const list =document.getElementById('cardList');
+  const empty=document.getElementById('empty');
+
+  if(!filtered.length){list.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+
+  let lastGrad=null,html='';
+  filtered.forEach(m=>{
+    if(m.graduacao!==lastGrad){
+      if(lastGrad!==null){
+        html+=`<div class="grad-div"><span>${esc(m.graduacao)}</span></div>`;
+      }
+      lastGrad=m.graduacao;
+    }
+    const sc=stripeClass(m.graduacao);
+    const nomeHtml=buildNomeHtml(m.nome,m.nguerra,q);
+    html+=`
+    <div class="mcard">
+      <div class="stripe ${sc}"></div>
+      <div class="mcard-body">
+        <div class="mcard-top">
+          <span class="mcard-grad">${hlText(m.graduacao,q)}</span>
+          <span class="mcard-quad">${esc(m.quadro)}</span>
+        </div>
+        <div class="mcard-nome">${nomeHtml}</div>
+        <div class="mcard-rg">RG ${hlText(m.rg,q)}</div>
+      </div>
+      <div class="mcard-actions">
+        <button class="mac-btn edit" onclick="openEdit('${esc(m.id)}')">✏</button>
+        <div class="mac-sep"></div>
+        <button class="mac-btn del"  onclick="confirmDel('${esc(m.id)}')">✕</button>
+      </div>
+    </div>`;
+  });
+  list.innerHTML=html;
+}
+
+function renderChips(){
+  const present=[...new Set(data.map(m=>m.graduacao))];
+  const ordered=GRAD_ORDER.filter(g=>present.includes(g));
+  const el=document.getElementById('chips');
+  el.innerHTML=`<button class="chip${filterGrad==='TODOS'?' on':''}" onclick="setGrad('TODOS',this)">Todos</button>`+
+    ordered.map(g=>`<button class="chip${filterGrad===g?' on':''}" onclick="setGrad('${esc(g)}',this)">${esc(g)}</button>`).join('');
+}
+
+function setGrad(g,el){
+  filterGrad=g;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  render();
+}
+
+/* ── SELECT helper ──────────────────────────────────────── */
+function fillSelect(id, current=''){
+  const sel=document.getElementById(id);
+  sel.innerHTML=(current?'':'<option value="">Selecione…</option>')+
+    GRAD_ORDER.map(g=>`<option${g===current?' selected':''}>${esc(g)}</option>`).join('');
+}
+
+/* ── ADMIN AUTH ─────────────────────────────────────────── */
+function openAdminLogin(){
+  if(isAdmin){adminLogout();return;}
+  open_('shLogin');
+  setTimeout(()=>document.getElementById('loginPwd').focus(),200);
+}
+async function doLogin(){
+  if(document.getElementById('loginPwd').value===PASS){
+    isAdmin=true;
+    // Cria cliente privilegiado com service_role key
+    if(sbReady()){
+      sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_SERVICE);
+      await loadReqs();
+    } else {
+      try{reqs=JSON.parse(localStorage.getItem(LS_REQS)||'[]');}catch{reqs=[];}
+    }
+    close_('shLogin');applyAdminUI();
+    toast('Acesso concedido.','ok');
+  } else {
+    toast('Senha incorreta.','err');
+    document.getElementById('loginPwd').value='';
+    document.getElementById('loginPwd').focus();
+  }
+}
+function adminLogout(){
+  isAdmin=false; sbAdmin=null; reqs=[];
+  applyAdminUI(); toast('Sessão encerrada.','inf');
+}
+
+function applyAdminUI(){
+  document.getElementById('adminBanner').classList.toggle('on',isAdmin);
+  document.getElementById('appRoot').classList.toggle('admin-on',isAdmin);
+  document.getElementById('btnAdmin').textContent=isAdmin?'🔓 Sair':'🔒 Admin';
+  document.getElementById('btnAdmin').classList.toggle('gold',isAdmin);
+  document.getElementById('fabUser').style.display =isAdmin?'none':'';
+  document.getElementById('fabAdmin').style.display=isAdmin?'':'none';
+  const pc=reqs.length;
+  document.getElementById('pbCount').textContent=pc;
+  document.getElementById('btnPending').style.display=(isAdmin&&pc>0)?'':'none';
+  render();
+}
+
+/* ── ADD (ADMIN) ────────────────────────────────────────── */
+function openAdd(){
+  fillSelect('aGrad');
+  ['aNome','aRg','aQuadro','aNguerra'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('addNgPreview').style.display='none';
+  open_('shAdd');
+  setTimeout(()=>document.getElementById('aGrad').focus(),200);
+}
+
+async function saveMilitar(){
+  const grad   =document.getElementById('aGrad').value.trim().toUpperCase();
+  const quad   =document.getElementById('aQuadro').value.trim().toUpperCase();
+  const nome   =document.getElementById('aNome').value.trim().toUpperCase();
+  const nguerra=document.getElementById('aNguerra').value.trim().toUpperCase();
+  const rg     =document.getElementById('aRg').value.trim();
+
+  if(!grad||!nome||!rg){toast('Preencha todos os campos obrigatórios.','err');return;}
+  if(data.find(m=>m.rg===rg)){toast(`RG ${rg} já cadastrado.`,'err');return;}
+
+  if(sbReady()&&sbAdmin){
+    try{
+      const {data:row,error}=await sbAdmin
+        .from('militares')
+        .insert({graduacao:grad,quadro:quad,nome,rg,nguerra})
+        .select().single();
+      if(error) throw error;
+      data.push({id:row.id,graduacao:grad,quadro:quad,nome,rg,nguerra});
+    } catch(e){
+      toast('Erro ao salvar: '+e.message,'err'); return;
+    }
+  } else {
+    data.push({id:uid(),graduacao:grad,quadro:quad,nome,rg,nguerra});
+    saveLocal();
+  }
+
+  // Se veio de aprovação, marca solicitação como aprovada
+  if(window._approving){
+    await approveReqFinish(window._approving);
+    window._approving=null;
+  }
+  close_('shAdd'); applyAdminUI();
+  toast('Militar incluído com sucesso.','ok');
+}
+
+/* ── EDIT (ADMIN) ───────────────────────────────────────── */
+function openEdit(id){
+  const m=data.find(x=>x.id===id); if(!m) return;
+  document.getElementById('eId').value      =id;
+  fillSelect('eGrad',m.graduacao);
+  document.getElementById('eQuadro').value  =m.quadro;
+  document.getElementById('eNome').value    =m.nome;
+  document.getElementById('eNguerra').value =m.nguerra||'';
+  document.getElementById('eRg').value      =m.rg;
+  document.getElementById('editNgPreview').style.display='none';
+  // mostra preview se já tem nguerra
+  if(m.nguerra) updateNgPreview('edit');
+  open_('shEdit');
+}
+
+async function updateMilitar(){
+  const id     =document.getElementById('eId').value;
+  const grad   =document.getElementById('eGrad').value.trim().toUpperCase();
+  const quad   =document.getElementById('eQuadro').value.trim().toUpperCase();
+  const nome   =document.getElementById('eNome').value.trim().toUpperCase();
+  const nguerra=document.getElementById('eNguerra').value.trim().toUpperCase();
+  const rg     =document.getElementById('eRg').value.trim();
+
+  if(!grad||!nome||!rg){toast('Preencha todos os campos obrigatórios.','err');return;}
+  if(data.find(m=>m.rg===rg&&m.id!==id)){toast(`RG ${rg} já está em uso.`,'err');return;}
+
+  if(sbReady()&&sbAdmin){
+    try{
+      const {error}=await sbAdmin
+        .from('militares')
+        .update({graduacao:grad,quadro:quad,nome,rg,nguerra})
+        .eq('id',id);
+      if(error) throw error;
+    } catch(e){
+      toast('Erro ao atualizar: '+e.message,'err'); return;
+    }
+  } else {
+    saveLocal();
+  }
+  const idx=data.findIndex(m=>m.id===id);
+  if(idx>-1) data[idx]={...data[idx],graduacao:grad,quadro:quad,nome,rg,nguerra};
+  close_('shEdit'); render();
+  toast('Militar atualizado.','ok');
+}
+
+/* ── DELETE (ADMIN) ─────────────────────────────────────── */
+function confirmDel(id){
+  const m=data.find(x=>x.id===id); if(!m) return;
+  delTarget=id;
+  document.getElementById('confirmMsg').textContent=
+    `Excluir ${m.graduacao} ${m.nome} (RG ${m.rg})?`;
+  document.getElementById('confirmOk').onclick=doDelete;
+  open_('shConfirm');
+}
+async function doDelete(){
+  if(sbReady()&&sbAdmin){
+    try{
+      const {error}=await sbAdmin
+        .from('militares').delete().eq('id',delTarget);
+      if(error) throw error;
+    } catch(e){
+      toast('Erro ao excluir: '+e.message,'err'); return;
+    }
+  } else { saveLocal(); }
+  data=data.filter(m=>m.id!==delTarget);
+  close_('shConfirm'); render();
+  toast('Militar excluído.','inf');
+  delTarget=null;
+}
+
+/* ── REQUEST (USUÁRIO) ──────────────────────────────────── */
+function openRequest(){
+  fillSelect('rGrad');
+  ['rQuadro','rNome','rRg','rObs'].forEach(id=>document.getElementById(id).value='');
+  open_('shRequest');
+}
+async function submitRequest(){
+  const grad=document.getElementById('rGrad').value.trim().toUpperCase();
+  const quad=document.getElementById('rQuadro').value.trim().toUpperCase();
+  const nome=document.getElementById('rNome').value.trim().toUpperCase();
+  const rg  =document.getElementById('rRg').value.trim();
+  const obs =document.getElementById('rObs').value.trim().toUpperCase();
+  if(!grad||!nome||!rg){toast('Preencha os campos obrigatórios.','err');return;}
+  if(data.find(m=>m.rg===rg)){toast(`RG ${rg} já está no quadro.`,'err');return;}
+
+  if(sbReady()){
+    try{
+      const {error}=await sbPublic
+        .from('solicitacoes')
+        .insert({graduacao:grad,quadro:quad,nome,rg,obs,status:'pendente'});
+      if(error) throw error;
+    } catch(e){
+      toast('Erro ao enviar: '+e.message,'err'); return;
+    }
+  } else {
+    reqs.push({id:uid(),grad,quad,nome,rg,obs,dt:new Date().toLocaleDateString('pt-BR')});
+    localStorage.setItem(LS_REQS,JSON.stringify(reqs));
+  }
+  close_('shRequest');
+  toast('Solicitação enviada! Aguarde o Administrador.','ok');
+}
+
+/* ── PENDING (ADMIN) ────────────────────────────────────── */
+function openPending(){renderPending();open_('shPending');}
+function renderPending(){
+  const el=document.getElementById('pendingBody');
+  if(!reqs.length){
+    el.innerHTML='<p style="text-align:center;padding:2rem;color:var(--muted);font-size:.85rem">Nenhuma solicitação.</p>';
+    return;
+  }
+  el.innerHTML='<div class="req-list">'+reqs.map(r=>`
+    <div class="req-card">
+      <div class="req-top">
+        <span class="req-grad">${esc(r.grad)}</span>
+        <span class="req-dt">${esc(r.dt)}</span>
+      </div>
+      <div class="req-nome">${esc(r.nome)}</div>
+      <div class="req-sub">RG ${esc(r.rg)}${r.quad?' · '+esc(r.quad):''}</div>
+      ${r.obs?`<div class="req-obs">${esc(r.obs)}</div>`:''}
+      <div class="req-acts">
+        <button class="btn btn-gold btn-sm" onclick="approveReq('${esc(r.id)}')">★ Aprovar</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectReq('${esc(r.id)}')">Rejeitar</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+function approveReq(id){
+  const r=reqs.find(x=>x.id===id); if(!r) return;
+  fillSelect('aGrad',r.grad);
+  document.getElementById('aQuadro').value  =r.quad||'';
+  document.getElementById('aNome').value    =r.nome;
+  document.getElementById('aNguerra').value ='';
+  document.getElementById('aRg').value      =r.rg;
+  document.getElementById('addNgPreview').style.display='none';
+  window._approving=id;
+  close_('shPending'); open_('shAdd');
+}
+// Chamado após salvar o militar aprovado
+async function approveReqFinish(id){
+  if(sbReady()&&sbAdmin){
+    try{
+      await sbAdmin.from('solicitacoes').update({status:'aprovado'}).eq('id',id);
+    } catch(e){ console.error(e); }
+  }
+  reqs=reqs.filter(x=>x.id!==id);
+  await saveReqs();
+}
+async function rejectReq(id){
+  if(sbReady()&&sbAdmin){
+    try{
+      await sbAdmin.from('solicitacoes').update({status:'rejeitado'}).eq('id',id);
+    } catch(e){ console.error(e); }
+  }
+  reqs=reqs.filter(x=>x.id!==id);
+  renderPending(); applyAdminUI();
+  toast('Solicitação rejeitada.','wrn');
+}
+
+/* ── OVERLAYS ───────────────────────────────────────────── */
+function open_(id) {document.getElementById(id).classList.add('on');}
+function close_(id){document.getElementById(id).classList.remove('on');}
+document.querySelectorAll('.overlay').forEach(ov=>{
+  ov.addEventListener('click',e=>{if(e.target===ov)close_(ov.id);});
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')
+    document.querySelectorAll('.overlay.on').forEach(m=>close_(m.id));
+});
+
+/* ── TOAST ──────────────────────────────────────────────── */
+function toast(msg,type='inf'){
+  const icons={ok:'✓',err:'✕',inf:'ℹ',wrn:'⚠'};
+  const el=document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${icons[type]}</span><span>${esc(msg)}</span>`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3600);
+}
+
+/* ── UTILS ──────────────────────────────────────────────── */
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escRegex(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+/* ── INIT ───────────────────────────────────────────────── */
+document.getElementById('searchInput').addEventListener('input',render);
+// load() é async — executa e depois aplica UI
+load().then(()=>applyAdminUI());
+</script>
+</body>
+</html>
