@@ -50,13 +50,13 @@ function perguntasPadrao(materialBlock, extras) {
 }
 
 const BLOQUEIO_VIA = { key:"bloqueio", label:"Existe Bloqueio da Via", type:"checkbox",
-  options:["Parcial","Total","Vazamento de carga","Sentido Rio de Janeiro","Sentido Juiz de Fora","Sentido Três Rios","Sentido Paraíba do Sul","Sentido Levi Gasparian","Sentido Volta Redonda","Sentido Sapucaia"] };
+  options:["Não","Parcial","Total","Vazamento de carga","Sentido Rio de Janeiro","Sentido Juiz de Fora","Sentido Três Rios","Sentido Paraíba do Sul","Sentido Levi Gasparian","Sentido Volta Redonda","Sentido Sapucaia"] };
 
 const MATERIAL_TRANSPORTADO = { key:"materialTransportado", label:"Tipo de Material Transportado", type:"checkboxComTexto",
   options:["Carga Comum","Inflamável","Química","Explosiva"], textoLabel:"Qual" };
 
 const SITUACAO_ACIDENTE = { key:"situacao", label:"Situação Encontrada", type:"checkbox",
-  options:["Vítima já fora do veículo","Vítima presa às ferragens","Vítima ejetada","Múltiplas vítimas","Veículo com GNV","Veículo Híbrido","Veículo 100% Elétrico","Carga Perigosa"] };
+  options:["Vítima dentro do veículo","Vítima já fora do veículo","Vítima presa às ferragens","Vítima ejetada","Múltiplas vítimas","Veículo com GNV","Veículo Híbrido","Veículo 100% Elétrico","Carga Perigosa"] };
 
 function perguntasAcidenteVeicular() {
   return [SITUACAO_ACIDENTE, DANOS, BLOQUEIO_VIA, MATERIAL_TRANSPORTADO, VITIMAS, SITUACAO_VITIMAS, RECURSOS, OBSERVACOES];
