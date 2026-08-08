@@ -523,7 +523,7 @@ function gerarTextoInforme(){
   const blocos = [];
 
   /* Bloco 1: cabeçalho */
-  const cab = ["AVALIAÇÃO DA CENA"];
+  const cab = ["*AVALIAÇÃO DA CENA*"];
   const agora = state.geradoEm || new Date();
   cab.push("DATA: " + agora.toLocaleDateString("pt-BR"));
   cab.push("HORA: " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
