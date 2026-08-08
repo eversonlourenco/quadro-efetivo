@@ -27,7 +27,7 @@ const MATERIAL_VEICULO = {
 };
 
 const SITUACAO_INCENDIO = { key:"situacao", label:"Situação Encontrada", type:"checkbox",
-  options:["Pequeno","Médio","Grande","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
+  options:["Pequeno Incêndio","Médio Incêndio","Grande Incêndio","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
 
 const DANOS = { key:"danos", label:"Danos", type:"checkbox", options:["Parcial","Total"] };
 
@@ -68,7 +68,7 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
   grupos:[
     { nome:"Propriedade", options:["Pública","Privada","Não identificada"] },
     { nome:"Zoneamento", options:["Urbano","Rural","Unidade de Conservação"] },
-    { nome:"Tipo de Combustível Predominante", options:["Rasteiro (pasto/gramíneas)","Médio (arbustos/capoeira)","Alto (copas/floresta)"] },
+    { nome:"Tipo de Combustível Predominante", options:["Rasteiro","Pasto","Arbusto","Árvore"] },
     { nome:"Topografia / Relevo", options:["Plano","Encosta","Aclive","Declive","Montanhoso","Irregular"] },
     { nome:"Vento Predominante", options:["Calmo","Moderado","Forte"] },
     { nome:"Apoio de Órgãos Externos", options:["Guarda Municipal","Defesa Civil Municipal","Brigadistas","Voluntários"] },
@@ -263,11 +263,11 @@ function renderTipoScreen(){
   const list = el("div","stack-list");
   TIPOS.forEach(t=>{
     const selected = state.tipoId===t.id;
-    const btn = el("button","opt-row"+(selected?" selected":""));
+    const btn = el("button","opt-row opt-row-primary"+(selected?" selected":""));
     btn.type="button";
     btn.appendChild(el("span","btn-label-clean", t.nome));
-    btn.onclick = ()=>{ 
-      state.tipoId=t.id; 
+    btn.onclick = ()=>{
+      state.tipoId=t.id;
       state.subtipoIds=[]; 
       state.quantidadeVeiculos=0; 
       state.respostas={}; 
@@ -386,7 +386,7 @@ function renderPerguntasScreen(){
     c.appendChild(renderPergunta(p));
   });
 
-  const next = el("button","btn-primary btn-yellow btn-block","Gerar Informe");
+  const next = el("button","btn-primary btn-yellow btn-block","GERAR INFORME OPERACIONAL");
   next.onclick = ()=>{ 
     state.geradoEm = new Date(); 
     if(!state.coordenadas) capturarLocalizacaoAutomatica();
@@ -411,13 +411,25 @@ function renderPergunta(p){
   return box;
 }
 
-function gridOptionsNoIcons(options, isSelectedFn, onToggle){
+function severityColor(op){
+  if(op==="Pequeno Incêndio") return "var(--green)";
+  if(op==="Médio Incêndio") return "var(--amber)";
+  if(op==="Grande Incêndio") return "var(--red)";
+  return null;
+}
+
+function gridOptionsNoIcons(options, isSelectedFn, onToggle, colorFn){
   const grid = el("div","grid-3-list");
   options.forEach(op=>{
     const selected = isSelectedFn(op);
     const b = el("button","grid-btn"+(selected?" selected":""));
     b.type="button";
-    b.appendChild(el("span","grid-btn-text", op));
+    const span = el("span","grid-btn-text", op);
+    if(colorFn){
+      const c = colorFn(op);
+      if(c) span.style.color = c;
+    }
+    b.appendChild(span);
     b.onclick=()=>{ onToggle(op); render(); };
     grid.appendChild(b);
   });
@@ -426,7 +438,8 @@ function gridOptionsNoIcons(options, isSelectedFn, onToggle){
 
 function renderCheckboxBlock(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
-  box.appendChild(gridOptionsNoIcons(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
+  const cf = p.key==="situacao" ? severityColor : null;
+  box.appendChild(gridOptionsNoIcons(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op), cf));
   if(p.extra){
     box.appendChild(el("div","field-label mt", p.extra.label));
     const key = p.key+"_extra";
@@ -482,10 +495,17 @@ function renderMaterialBlock(p, box){
 function renderGruposBlock(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
   const r = getResp(p.key);
+  if(!r.groups) r.groups = {};
   p.grupos.forEach(g=>{
     box.appendChild(el("div","field-label mt", g.nome));
-    const gkey = p.key+"_"+g.nome;
-    box.appendChild(gridOptionsNoIcons(g.options, op=>r[gkey]===op, op=>{ r[gkey] = (r[gkey]===op? null : op); }));
+    if(!r.groups[g.nome]) r.groups[g.nome] = [];
+    box.appendChild(gridOptionsNoIcons(g.options,
+      op=>r.groups[g.nome].includes(op),
+      op=>{
+        const arr = r.groups[g.nome];
+        const i = arr.indexOf(op);
+        if(i>=0) arr.splice(i,1); else arr.push(op);
+      }));
   });
   return box;
 }
@@ -500,6 +520,13 @@ function renderContadoresBlock(p, box){
   return box;
 }
 
+function counterFieldColored(label, color, value, onChange){
+  const row = counterField(label, value, onChange);
+  const labelEl = row.querySelector(".field-label");
+  if(labelEl && color) labelEl.style.color = color;
+  return row;
+}
+
 function renderVitimasBlock(box){
   box.appendChild(el("h3","subpanel-title","Vítimas"));
   const r = getResp("vitimas");
@@ -510,10 +537,10 @@ function renderVitimasBlock(box){
   box.appendChild(semBtn);
   if(!r.sem){
     box.appendChild(counterField("Quantidade de Vítimas", r.total||0, v=>{r.total=v; render();}));
-    box.appendChild(counterField("Verdes", r.verde||0, v=>{r.verde=v; render();}));
-    box.appendChild(counterField("Amarelas", r.amarelo||0, v=>{r.amarelo=v; render();}));
-    box.appendChild(counterField("Vermelhas", r.vermelho||0, v=>{r.vermelho=v; render();}));
-    box.appendChild(counterField("Cinzas", r.cinza||0, v=>{r.cinza=v; render();}));
+    box.appendChild(counterFieldColored("Verdes", "var(--green)", r.verde||0, v=>{r.verde=v; render();}));
+    box.appendChild(counterFieldColored("Amarelas", "var(--amber)", r.amarelo||0, v=>{r.amarelo=v; render();}));
+    box.appendChild(counterFieldColored("Vermelhas", "var(--red)", r.vermelho||0, v=>{r.vermelho=v; render();}));
+    box.appendChild(counterFieldColored("Cinzas", "var(--text-dim)", r.cinza||0, v=>{r.cinza=v; render();}));
   }
   return box;
 }
@@ -612,15 +639,17 @@ function gerarTextoInforme(){
       sit.push(linha.trim());
     } else if(p.type==="grupos"){
       const partes = p.grupos
-        .map(g=>({nome:g.nome, valor:r[p.key+"_"+g.nome]}))
-        .filter(x=>x.valor)
-        .map(x=>x.nome + ": " + x.valor);
+        .map(g=>({nome:g.nome, valores:(r.groups && r.groups[g.nome]) || []}))
+        .filter(x=>x.valores.length>0)
+        .map(x=>x.nome + ": " + x.valores.join(", "));
       if(partes.length) {
+        if(sit.length) sit.push(SEPARADOR);
         sit.push("INFORMAÇÕES ADICIONAIS:\n" + partes.join("\n"));
       }
     } else if(p.type==="contadores" && r.counts){
       const entries = Object.entries(r.counts).filter(([k,v])=>v>0);
       if(entries.length) {
+        if(sit.length) sit.push(SEPARADOR);
         sit.push("FERRAMENTAS:\n" + entries.map(([k,v])=> k + " (" + v + ")").join("\n"));
       }
     }
@@ -692,21 +721,21 @@ function renderInformeScreen(){
 
   const actions = el("div","action-grid");
 
-  const btnWpp = el("button","btn-action btn-whatsapp","Enviar pelo WhatsApp");
+  const btnWpp = el("button","btn-action btn-whatsapp","ENVIAR PELO WHATSAPP");
   btnWpp.type="button";
   btnWpp.onclick = ()=>{
     const url = "https://wa.me/?text=" + encodeURIComponent(gerarTextoInforme());
     window.open(url, "_blank");
   };
 
-  const btnCopy = el("button","btn-action btn-copy","Copiar Texto");
+  const btnCopy = el("button","btn-action btn-copy","COPIAR TEXTO");
   btnCopy.type="button";
   btnCopy.onclick = async ()=>{
     const texto = gerarTextoInforme();
     try{
       await navigator.clipboard.writeText(texto);
       btnCopy.textContent = "Copiado!";
-      setTimeout(()=>{btnCopy.textContent="Copiar Texto";}, 1800);
+      setTimeout(()=>{btnCopy.textContent="COPIAR TEXTO";}, 1800);
     }catch(e){
       const ta = document.createElement("textarea");
       ta.value = texto;
@@ -715,11 +744,11 @@ function renderInformeScreen(){
       document.execCommand("copy");
       document.body.removeChild(ta);
       btnCopy.textContent = "Copiado!";
-      setTimeout(()=>{btnCopy.textContent="Copiar Texto";}, 1800);
+      setTimeout(()=>{btnCopy.textContent="COPIAR TEXTO";}, 1800);
     }
   };
 
-  const btnReset = el("button","btn-action btn-reset","Zerar Formulário");
+  const btnReset = el("button","btn-action btn-reset","ZERAR FORMULÁRIO");
   btnReset.type="button";
   btnReset.onclick = ()=>{
     if(confirm("Deseja realmente zerar o formulário? Todos os dados serão perdidos.")) resetForm();

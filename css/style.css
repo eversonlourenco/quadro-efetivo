@@ -8,12 +8,17 @@
   --red: #d32f2f;
   --red-dim: #4a1515;
   --amber: #ffcc00;
+  --amber-dim: #2b260d;
   --green: #2e7d32;
+  --blue: #2979ff;
+  --blue-dim: #0d2a5c;
   --radius: 8px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 *{ box-sizing:border-box; }
+
+button, input, textarea{ font-family: inherit; }
 
 html,body{
   margin:0; padding:0;
@@ -71,6 +76,13 @@ body{
   width:100%;
 }
 .opt-row:active{ transform: scale(.99); }
+
+/* Tela 1 (Tipo) usa vermelho como cor de seleção — Tela 2 (Subtipo) usa amarelo */
+.opt-row-primary.selected{
+  border-color:var(--red);
+  background:var(--red-dim);
+  color:#ffffff;
+}
 
 /* Grid de seleção (Tela 3) */
 .grid-3-list{
@@ -148,7 +160,11 @@ body{
   background:var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
   padding:16px; margin-bottom:14px;
 }
-.subpanel-title{ font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); margin:0 0 10px; font-weight:800; }
+.subpanel-title{
+  font-size:13px; text-transform:uppercase; letter-spacing:.04em;
+  color:var(--red); margin:0 0 10px; font-weight:800;
+  padding-bottom:8px; border-bottom:1px solid var(--red-dim);
+}
 
 .btn-primary{
   background:var(--red); color:#fff; border:none; border-radius: var(--radius);
@@ -158,25 +174,29 @@ body{
 .btn-block{ width:100%; display:block; }
 .btn-yellow{ background:var(--amber); color:#121212; }
 
-/* Ticket do Informe */
+/* Localização */
+/* Ticket do Informe — fundo preto, letras douradas */
 .ticket{
-  background: #f8f6ee; color:#111; border-radius:8px; padding:18px;
-  border: 1px dashed #c0b496; margin-bottom:18px;
+  background: #0a0a0a; color:#d4af37; border-radius:8px; padding:18px;
+  border: 1px dashed #7a6320; margin-bottom:18px;
 }
 .ticket-text{
   white-space: pre-wrap; word-break: break-word;
   font-family: "SFMono-Regular", Consolas, Menlo, monospace;
   font-size:12.5px; line-height:1.6; margin:0;
+  color:#d4af37;
 }
 
 .action-grid{ display:flex; flex-direction:column; gap:10px; }
 .btn-action{
   border:none; border-radius: var(--radius); padding:15px; font-size:14.5px; font-weight:800;
   cursor:pointer; color:#fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  letter-spacing:.02em;
 }
-.btn-whatsapp{ background:#25D366; color:#05220f; }
-.btn-copy{ background:var(--bg-panel); border:1px solid var(--line); color:var(--text); }
-.btn-reset{ background:transparent; border:1px solid var(--red); color:#ff7b75; }
+.btn-whatsapp{ background:#25D366; color:#ffffff; }
+.btn-copy{ background:var(--bg-panel); border:1px solid var(--line); color:#ffffff; }
+.btn-reset{ background:var(--red); border:1px solid var(--red); color:#ffffff; }
 
 @media (max-width: 360px){
   .grid-3-list{
