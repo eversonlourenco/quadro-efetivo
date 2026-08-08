@@ -525,11 +525,11 @@ function gerarTextoInforme(){
   /* Bloco 1: cabeçalho */
   const cab = ["*AVALIAÇÃO DA CENA*"];
   const agora = state.geradoEm || new Date();
-  cab.push("DATA: " + agora.toLocaleDateString("pt-BR"));
-  cab.push("HORA: " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
-  if(state.coordenadas.trim()) cab.push("COORDENADAS: " + state.coordenadas.trim());
-  if(state.endereco.trim()) cab.push("ENDEREÇO: " + state.endereco.trim());
-  cab.push("MISSÃO: " + (t.missao || ""));
+  cab.push("*DATA:* " + agora.toLocaleDateString("pt-BR"));
+  cab.push("*HORA:* " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
+  if(state.coordenadas.trim()) cab.push("*COORDENADAS:* " + state.coordenadas.trim());
+  if(state.endereco.trim()) cab.push("*ENDEREÇO:* " + state.endereco.trim());
+  cab.push("*MISSÃO:* " + (t.missao || ""));
   blocos.push(cab);
 
   /* Bloco 2: tipo / subtipo / detalhes de local */
