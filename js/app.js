@@ -7,27 +7,27 @@
 const MATERIAL_EDIFICACOES = {
   label: "Tipo de Material Queimando",
   classes: [
-    { nome: "Sólidos (Classe A)", itens: ["Sofás","Camas","Colchões","Tapetes","Cortinas","Guarda-roupas","Mesas","Cadeiras","Estantes","Livros","Roupas","Papéis","Quadros","Brinquedos","Utensílios"] },
-    { nome: "Líquidos Inflamáveis (Classe B)", itens: ["Gasolina","Álcool","Óleo Diesel","Querosene","Óleos lubrificantes","Tintas"] },
-    { nome: "Equipamentos Elétricos (Classe C)", itens: ["Televisores","Geladeiras","Fogões","Micro-ondas","Máquinas de lavar","Computadores","Ar-condicionado","Liquidificadores","Batedeiras","Airfryers","Sanduicheiras","Cafeteiras","Ventiladores"] },
-    { nome: "Metais Combustíveis (Classe D)", itens: ["Magnésio","Titânio","Lítio","Sódio","Potássio","Alumínio","Zinco"] },
-    { nome: "Óleos e Gorduras (Classe K)", itens: ["Óleo de soja","Óleo de canola","Óleo de milho","Óleo de girassol","Óleo de oliva","Azeite"] },
+    { nome: "Sólidos (Classe A)", itens: ["Sofás","Camas","Colchões","Tapetes","Cortinas","Guarda-roupas","Mesas","Cadeiras","Estantes","Livros","Roupas","Papéis","Quadros","Brinquedos","Utensílios"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Líquidos Inflamáveis (Classe B)", itens: ["Gasolina","Álcool","Óleo Diesel","Querosene","Óleos lubrificantes","Tintas"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Equipamentos Elétricos (Classe C)", itens: ["Televisores","Geladeiras","Fogões","Micro-ondas","Máquinas de lavar","Computadores","Ar-condicionado","Liquidificadores","Batedeiras","Airfryers","Sanduicheiras","Cafeteiras","Ventiladores"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Metais Combustíveis (Classe D)", itens: ["Magnésio","Titânio","Lítio","Sódio","Potássio","Alumínio","Zinco"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Óleos e Gorduras (Classe K)", itens: ["Óleo de soja","Óleo de canola","Óleo de milho","Óleo de girassol","Óleo de oliva","Azeite"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
   ]
 };
 
 const MATERIAL_VEICULO = {
   label: "Tipo de Material Queimando",
   classes: [
-    { nome: "Sólidos (Classe A)", itens: ["Madeira","Papel","Tecido","Plásticos","Borracha","Papelão","Lixo"] },
-    { nome: "Líquidos Inflamáveis (Classe B)", itens: ["Gasolina","Álcool","Óleo Diesel","Querosene","Óleos lubrificantes","Tintas"] },
-    { nome: "Equipamentos Elétricos (Classe C)", itens: ["Transformadores","Quadros de força","Motores elétricos","Computadores","Cabos e fios","Painéis solares","Telecomunicação","Máquinas industriais","Ar-condicionado","Tomadas"] },
-    { nome: "Metais Combustíveis (Classe D)", itens: ["Magnésio","Titânio","Lítio","Sódio","Potássio","Alumínio","Zinco"] },
-    { nome: "Óleos e Gorduras (Classe K)", itens: ["Óleo de soja","Óleo de canola","Óleo de milho","Óleo de girassol","Óleo de oliva","Azeite"] },
+    { nome: "Sólidos (Classe A)", itens: ["Madeira","Papel","Tecido","Plásticos","Borracha","Papelão","Lixo"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Líquidos Inflamáveis (Classe B)", itens: ["Gasolina","Álcool","Óleo Diesel","Querosene","Óleos lubrificantes","Tintas"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Equipamentos Elétricos (Classe C)", itens: ["Transformadores","Quadros de força","Motores elétricos","Computadores","Cabos e fios","Painéis solares","Telecomunicação","Máquinas industriais","Ar-condicionado","Tomadas"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Metais Combustíveis (Classe D)", itens: ["Magnésio","Titânio","Lítio","Sódio","Potássio","Alumínio","Zinco"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
+    { nome: "Óleos e Gorduras (Classe K)", itens: ["Óleo de soja","Óleo de canola","Óleo de milho","Óleo de girassol","Óleo de oliva","Azeite"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
   ]
 };
 
 const SITUACAO_INCENDIO = { key:"situacao", label:"Situação Encontrada", type:"checkbox",
-  options:["Pequeno Incêndio","Médio Incêndio","Grande Incêndio","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
+  options:["Pequeno","Médio","Grande","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
 
 const DANOS = { key:"danos", label:"Danos", type:"checkbox", options:["Parcial","Total"] };
 
@@ -68,7 +68,7 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
   grupos:[
     { nome:"Propriedade", options:["Pública","Privada","Não identificada"] },
     { nome:"Zoneamento", options:["Urbano","Rural","Unidade de Conservação"] },
-    { nome:"Tipo de Combustível Predominante", options:["Rasteiro","Pasto","Arbustos","Árvores"] },
+    { nome:"Tipo de Combustível Predominante", options:["Rasteiro (pasto/gramíneas)","Médio (arbustos/capoeira)","Alto (copas/floresta)"] },
     { nome:"Topografia / Relevo", options:["Plano","Encosta","Aclive","Declive","Montanhoso","Irregular"] },
     { nome:"Vento Predominante", options:["Calmo","Moderado","Forte"] },
     { nome:"Apoio de Órgãos Externos", options:["Guarda Municipal","Defesa Civil Municipal","Brigadistas","Voluntários"] },
@@ -77,9 +77,9 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
 const FERRAMENTAS_VEGETACAO = { key:"ferramentas", label:"Ferramentas", type:"contadores",
   options:["Abafador","Bomba Costal","Enxada","Pá","McLeod","Facão"] };
 
-/* ---------- Estrutura dos Tipos ---------- */
+/* ---------- Estrutura de Tipos (Ordenada Alfabeticamente) ---------- */
 
-const TIPOS = [
+const TIPOS_UNSORTED = [
   {
     id:"incendio_edif", nome:"Incêndio em Edificações", missao:"INCÊNDIO",
     quantidadeVeiculos:false,
@@ -124,6 +124,14 @@ const TIPOS = [
     perguntas:[SITUACAO_VEGETACAO, DANOS, INFO_VEGETACAO, FERRAMENTAS_VEGETACAO, VITIMAS, SITUACAO_VITIMAS, RECURSOS, OBSERVACOES]
   },
 ];
+
+/* Ordenação A-Z dos Tipos e Subtipos */
+const TIPOS = TIPOS_UNSORTED
+  .map(t => ({
+    ...t,
+    subtipos: [...t.subtipos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+  }))
+  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
 /* ---------- Estado ---------- */
 
@@ -246,7 +254,7 @@ function el(tag, className, text){
   return e;
 }
 
-/* ---------- Tela 1: Tipo ---------- */
+/* ---------- Tela 1: Tipo (A-Z) ---------- */
 
 function renderTipoScreen(){
   const c = el("div","screen");
@@ -273,7 +281,7 @@ function renderTipoScreen(){
   return c;
 }
 
-/* ---------- Tela 2: Subtipo ---------- */
+/* ---------- Tela 2: Subtipo (A-Z) ---------- */
 
 function renderSubtipoScreen(){
   const t = tipoAtual();
@@ -542,7 +550,7 @@ function renderTextoBlock(p, box){
 
 function navBar(onBack){
   const bar = el("div","navbar");
-  const back = el("button","btn-back","← Voltar");
+  const back = el("button","btn-back","< Voltar");
   back.type="button";
   back.onclick = onBack;
   bar.appendChild(back);
@@ -684,21 +692,21 @@ function renderInformeScreen(){
 
   const actions = el("div","action-grid");
 
-  const btnWpp = el("button","btn-action btn-whatsapp","📲 Enviar pelo WhatsApp");
+  const btnWpp = el("button","btn-action btn-whatsapp","Enviar pelo WhatsApp");
   btnWpp.type="button";
   btnWpp.onclick = ()=>{
     const url = "https://wa.me/?text=" + encodeURIComponent(gerarTextoInforme());
     window.open(url, "_blank");
   };
 
-  const btnCopy = el("button","btn-action btn-copy","📋 Copiar Texto");
+  const btnCopy = el("button","btn-action btn-copy","Copiar Texto");
   btnCopy.type="button";
   btnCopy.onclick = async ()=>{
     const texto = gerarTextoInforme();
     try{
       await navigator.clipboard.writeText(texto);
-      btnCopy.textContent = "✓ Copiado!";
-      setTimeout(()=>{btnCopy.textContent="📋 Copiar Texto";}, 1800);
+      btnCopy.textContent = "Copiado!";
+      setTimeout(()=>{btnCopy.textContent="Copiar Texto";}, 1800);
     }catch(e){
       const ta = document.createElement("textarea");
       ta.value = texto;
@@ -706,12 +714,12 @@ function renderInformeScreen(){
       ta.select();
       document.execCommand("copy");
       document.body.removeChild(ta);
-      btnCopy.textContent = "✓ Copiado!";
-      setTimeout(()=>{btnCopy.textContent="📋 Copiar Texto";}, 1800);
+      btnCopy.textContent = "Copiado!";
+      setTimeout(()=>{btnCopy.textContent="Copiar Texto";}, 1800);
     }
   };
 
-  const btnReset = el("button","btn-action btn-reset","🗑 Zerar Formulário");
+  const btnReset = el("button","btn-action btn-reset","Zerar Formulário");
   btnReset.type="button";
   btnReset.onclick = ()=>{
     if(confirm("Deseja realmente zerar o formulário? Todos os dados serão perdidos.")) resetForm();
