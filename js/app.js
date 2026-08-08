@@ -68,9 +68,9 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
   grupos:[
     { nome:"Propriedade", options:["Pública","Privada","Não identificada"] },
     { nome:"Zoneamento", options:["Urbano","Rural","Unidade de Conservação"] },
-    { nome:"Tipo de Combustível Predominante", options:["Rasteiro","Pasto","Arbusto","Árvore"] },
-    { nome:"Topografia / Relevo", options:["Plano","Encosta","Aclive","Declive","Montanhoso","Irregular"] },
-    { nome:"Vento Predominante", options:["Calmo","Moderado","Forte"] },
+    { nome:"Tipo de Vegetação", options:["Rasteiro","Pasto","Arbusto","Árvore"] },
+    { nome:"Tipo de Terreno", options:["Plano","Encosta","Aclive","Declive","Montanhoso","Irregular"] },
+    { nome:"Condições do Vento", options:["Calmo","Moderado","Forte"] },
     { nome:"Apoio de Órgãos Externos", options:["Guarda Municipal","Defesa Civil Municipal","Brigadistas","Voluntários"] },
   ]};
 
@@ -595,13 +595,13 @@ function gerarTextoInforme(){
   const subs = subtiposSelecionados();
   const blocos = [];
 
-  const cab = ["AVALIAÇÃO DA CENA"];
+  const cab = ["*AVALIAÇÃO DA CENA*"];
   const agora = state.geradoEm || new Date();
-  cab.push("DATA: " + agora.toLocaleDateString("pt-BR"));
-  cab.push("HORA: " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
-  if(state.coordenadas.trim()) cab.push("COORDENADAS: " + state.coordenadas.trim());
-  if(state.endereco.trim()) cab.push("ENDEREÇO: " + state.endereco.trim());
-  cab.push("MISSÃO: " + (t.missao || ""));
+  cab.push("*DATA:* " + agora.toLocaleDateString("pt-BR"));
+  cab.push("*HORA:* " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
+  if(state.coordenadas.trim()) cab.push("*COORDENADAS:* " + state.coordenadas.trim());
+  if(state.endereco.trim()) cab.push("*ENDEREÇO:* " + state.endereco.trim());
+  cab.push("*MISSÃO:* " + (t.missao || ""));
   blocos.push(cab);
 
   const loc = [];
