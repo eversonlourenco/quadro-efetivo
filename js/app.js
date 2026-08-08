@@ -27,7 +27,7 @@ const MATERIAL_VEICULO = {
 };
 
 const SITUACAO_INCENDIO = { key:"situacao", label:"Situação Encontrada", type:"checkbox",
-  options:["Pequeno","Médio","Grande","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
+  options:["Pequeno Incêndio","Médio Incêndio","Grande Incêndio","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
 
 const DANOS = { key:"danos", label:"Danos", type:"checkbox", options:["Parcial","Total"] };
 
@@ -68,7 +68,7 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
   grupos:[
     { nome:"Propriedade", options:["Pública","Privada","Não identificada"] },
     { nome:"Zoneamento", options:["Urbano","Rural","Unidade de Conservação"] },
-    { nome:"Tipo de Combustível Predominante", options:["Rasteiro (pasto/gramíneas)","Médio (arbustos/capoeira)","Alto (copas/floresta)"] },
+    { nome:"Tipo de Combustível Predominante", options:["Rasteiro","Pasto","Arbustos","Árvores"] },
     { nome:"Topografia / Relevo", options:["Plano","Encosta","Aclive","Declive","Montanhoso","Irregular"] },
     { nome:"Vento Predominante", options:["Calmo","Moderado","Forte"] },
     { nome:"Apoio de Órgãos Externos", options:["Guarda Municipal","Defesa Civil Municipal","Brigadistas","Voluntários"] },
