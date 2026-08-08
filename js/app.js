@@ -37,8 +37,7 @@ const SITUACAO_VITIMAS = { key:"situacaoVitimas", label:"Situação das Vítimas
   options:["Em atendimento","Removida para o hospital","Removida por populares","Recusou atendimento"],
   extra:{ label:"Órgão responsável", options:["ASE","ABSR","SAMU","CONCESSIONÁRIA","OUTROS"] } };
 
-const RECURSOS = { key:"recursos", type:"recursos",
-  viaturaOptions:["ABSL","ABS","ASE","ABSR","AR"] };
+const RECURSOS = { key:"recursos", type:"recursos", viaturaOptions:["ABSL","ABS","ASE","ABSR","AR"] };
 
 const OBSERVACOES = { key:"observacoes", label:"Observações", type:"texto" };
 
@@ -69,7 +68,7 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
   grupos:[
     { nome:"Propriedade", options:["Pública","Privada","Não identificada"] },
     { nome:"Zoneamento", options:["Urbano","Rural","Unidade de Conservação"] },
-    { nome:"Tipo de Combustível Predominante", options:["Rasteiro (pasto)","Médio (arbustos)","Alto (copas)"] },
+    { nome:"Tipo de Combustível Predominante", options:["Rasteiro (pasto/gramíneas)","Médio (arbustos/capoeira)","Alto (copas/floresta)"] },
     { nome:"Topografia / Relevo", options:["Plano","Encosta","Aclive","Declive","Montanhoso","Irregular"] },
     { nome:"Vento Predominante", options:["Calmo","Moderado","Forte"] },
     { nome:"Apoio de Órgãos Externos", options:["Guarda Municipal","Defesa Civil Municipal","Brigadistas","Voluntários"] },
@@ -161,7 +160,7 @@ function resetForm(){
   window.scrollTo(0,0);
 }
 
-/* ---------- Coleta Automática de Geolocalização e Endereço ---------- */
+/* ---------- Coleta Automática de Geolocalização ---------- */
 
 function capturarLocalizacaoAutomatica() {
   if (!("geolocation" in navigator)) return;
@@ -173,7 +172,6 @@ function capturarLocalizacaoAutomatica() {
       const lon = pos.coords.longitude.toFixed(6);
       state.coordenadas = `${lat}, ${lon}`;
 
-      // Se houver internet, realiza a busca automática do endereço via OpenStreetMap
       try {
         const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
         if (resp.ok) {
@@ -193,7 +191,6 @@ function capturarLocalizacaoAutomatica() {
           }
         }
       } catch(e) {
-        // Modo offline: mantém apenas as coordenadas
       } finally {
         state.buscandoGeo = false;
         refreshTicketPre();
@@ -207,10 +204,9 @@ function capturarLocalizacaoAutomatica() {
   );
 }
 
-// Inicia a requisição da localização assim que abre a aplicação
 capturarLocalizacaoAutomatica();
 
-/* ---------- Helpers de resposta ---------- */
+/* ---------- Helpers ---------- */
 
 function getResp(key){
   if(!state.respostas[key]) state.respostas[key] = {};
@@ -229,14 +225,13 @@ function isChecked(key, opt){
   return !!(r && r.opts && r.opts.includes(opt));
 }
 
-/* ---------- Render raiz ---------- */
+/* ---------- Render ---------- */
 
 const app = document.getElementById("app");
 
 function render(){
   app.innerHTML = "";
   const wrap = el("div","screen-wrap");
-  wrap.appendChild(renderStepper());
   if(state.screen===1) wrap.appendChild(renderTipoScreen());
   else if(state.screen===2) wrap.appendChild(renderSubtipoScreen());
   else if(state.screen===3) wrap.appendChild(renderPerguntasScreen());
@@ -251,19 +246,6 @@ function el(tag, className, text){
   return e;
 }
 
-function renderStepper(){
-  const steps = ["Tipo","Subtipo","Detalhes","Informe"];
-  const bar = el("div","stepper");
-  steps.forEach((s,idx)=>{
-    const n = idx+1;
-    const item = el("div","step"+(state.screen===n?" active":"")+(state.screen>n?" done":""));
-    item.appendChild(el("span","step-num", String(n)));
-    item.appendChild(el("span","step-label", s));
-    bar.appendChild(item);
-  });
-  return bar;
-}
-
 /* ---------- Tela 1: Tipo ---------- */
 
 function renderTipoScreen(){
@@ -275,9 +257,16 @@ function renderTipoScreen(){
     const selected = state.tipoId===t.id;
     const btn = el("button","opt-row"+(selected?" selected":""));
     btn.type="button";
-    btn.appendChild(el("span","mark", selected?"●":"○"));
-    btn.appendChild(el("span","", t.nome));
-    btn.onclick = ()=>{ state.tipoId=t.id; state.subtipoIds=[]; state.quantidadeVeiculos=0; state.respostas={}; state.screen=2; render(); window.scrollTo(0,0); };
+    btn.appendChild(el("span","btn-label-clean", t.nome));
+    btn.onclick = ()=>{ 
+      state.tipoId=t.id; 
+      state.subtipoIds=[]; 
+      state.quantidadeVeiculos=0; 
+      state.respostas={}; 
+      state.screen=2; 
+      render(); 
+      window.scrollTo(0,0); 
+    };
     list.appendChild(btn);
   });
   c.appendChild(list);
@@ -302,8 +291,7 @@ function renderSubtipoScreen(){
     const selected = state.subtipoIds.includes(s.id);
     const btn = el("button","opt-row"+(selected?" selected":""));
     btn.type="button";
-    btn.appendChild(el("span","mark", selected?"☑":"☐"));
-    btn.appendChild(el("span","", s.nome));
+    btn.appendChild(el("span","btn-label-clean", s.nome));
     btn.onclick = ()=>{ toggleSubtipo(s.id); render(); };
     list.appendChild(btn);
   });
@@ -354,7 +342,7 @@ function renderResidencialDetalhes(){
   return box;
 }
 
-/* ---------- Campos genéricos ---------- */
+/* ---------- Campos ---------- */
 
 function labeledField(label, node){
   const f = el("div","field");
@@ -415,7 +403,6 @@ function renderPergunta(p){
   return box;
 }
 
-/* Renderização em GRID sem ícones (Até 3 por linha na Tela 3) */
 function gridOptionsNoIcons(options, isSelectedFn, onToggle){
   const grid = el("div","grid-3-list");
   options.forEach(op=>{
@@ -573,7 +560,6 @@ function gerarTextoInforme(){
   const subs = subtiposSelecionados();
   const blocos = [];
 
-  /* Bloco 1: cabeçalho */
   const cab = ["AVALIAÇÃO DA CENA"];
   const agora = state.geradoEm || new Date();
   cab.push("DATA: " + agora.toLocaleDateString("pt-BR"));
@@ -583,7 +569,6 @@ function gerarTextoInforme(){
   cab.push("MISSÃO: " + (t.missao || ""));
   blocos.push(cab);
 
-  /* Bloco 2: tipo / subtipo / detalhes de local */
   const loc = [];
   loc.push("TIPO: " + t.nome.toUpperCase());
   if(subs.length) loc.push("SUBTIPO: " + subs.map(s=>s.nome).join(", "));
@@ -598,7 +583,6 @@ function gerarTextoInforme(){
   }
   blocos.push(loc);
 
-  /* Bloco 3: situação / danos / material / bloqueio / info específicas */
   const sit = [];
   t.perguntas.forEach(p=>{
     const r = state.respostas[p.key];
@@ -619,7 +603,6 @@ function gerarTextoInforme(){
       if(r.texto && r.texto.trim()) linha += " (Qual: " + r.texto.trim() + ")";
       sit.push(linha.trim());
     } else if(p.type==="grupos"){
-      // FORMATAÇÃO INDIVIDUAL POR LINHA PARA VEGETAÇÃO
       const partes = p.grupos
         .map(g=>({nome:g.nome, valor:r[p.key+"_"+g.nome]}))
         .filter(x=>x.valor)
@@ -628,7 +611,6 @@ function gerarTextoInforme(){
         sit.push("INFORMAÇÕES ADICIONAIS:\n" + partes.join("\n"));
       }
     } else if(p.type==="contadores" && r.counts){
-      // FORMATAÇÃO INDIVIDUAL POR LINHA PARA FERRAMENTAS
       const entries = Object.entries(r.counts).filter(([k,v])=>v>0);
       if(entries.length) {
         sit.push("FERRAMENTAS:\n" + entries.map(([k,v])=> k + " (" + v + ")").join("\n"));
@@ -637,7 +619,6 @@ function gerarTextoInforme(){
   });
   blocos.push(sit);
 
-  /* Bloco 4: vítimas */
   const vit = [];
   const rv = state.respostas["vitimas"];
   if(rv){
@@ -662,7 +643,6 @@ function gerarTextoInforme(){
   }
   blocos.push(vit);
 
-  /* Bloco 5: recursos */
   const rec = [];
   const rr = state.respostas["recursos"];
   if(rr){
@@ -673,7 +653,6 @@ function gerarTextoInforme(){
   }
   blocos.push(rec);
 
-  /* Bloco 6: observações */
   const obs = [];
   const ro = state.respostas["observacoes"];
   if(ro && ro.texto && ro.texto.trim()) obs.push("OBSERVAÇÕES: " + ro.texto.trim());
@@ -743,7 +722,7 @@ function renderInformeScreen(){
   return c;
 }
 
-/* ---------- Inicialização + Service Worker ---------- */
+/* ---------- Inicialização ---------- */
 
 render();
 
