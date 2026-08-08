@@ -83,7 +83,7 @@ const FERRAMENTAS_VEGETACAO = { key:"ferramentas", label:"Ferramentas", type:"co
 
 const TIPOS = [
   {
-    id:"incendio_edif", nome:"Incêndio em Edificações",
+    id:"incendio_edif", nome:"Incêndio em Edificações", missao:"INCÊNDIO",
     quantidadeVeiculos:false,
     subtipos:[
       { id:"deposito", nome:"Depósitos/Galpões" },
@@ -96,31 +96,31 @@ const TIPOS = [
     perguntas: perguntasPadrao(MATERIAL_EDIFICACOES)
   },
   {
-    id:"fogo_veiculo", nome:"Fogo em Veículo",
+    id:"fogo_veiculo", nome:"Fogo em Veículo", missao:"INCÊNDIO",
     quantidadeVeiculos:true,
     subtipos:["Automóvel","Caminhão","Moto","Moto elétrica","Trem","Van","Ônibus"].map(n=>({id:n,nome:n})),
     perguntas: perguntasPadrao(MATERIAL_VEICULO)
   },
   {
-    id:"colisao", nome:"Colisão de Veículos",
+    id:"colisao", nome:"Colisão de Veículos", missao:"ACIDENTE DE TRÂNSITO",
     quantidadeVeiculos:true,
     subtipos:["Automóvel","Bicicleta","Caminhão","Carroça","Moto","Moto elétrica","Muro","Poste","Trem","Van","Ônibus"].map(n=>({id:n,nome:n})),
     perguntas: perguntasAcidenteVeicular()
   },
   {
-    id:"capotagem", nome:"Capotagem de Veículo",
+    id:"capotagem", nome:"Capotagem de Veículo", missao:"ACIDENTE DE TRÂNSITO",
     quantidadeVeiculos:true,
     subtipos:["Automóvel","Caminhão","Van","Ônibus"].map(n=>({id:n,nome:n})),
     perguntas: perguntasAcidenteVeicular()
   },
   {
-    id:"queda", nome:"Queda de Veículo",
+    id:"queda", nome:"Queda de Veículo", missao:"ACIDENTE DE TRÂNSITO",
     quantidadeVeiculos:true,
     subtipos:["Automóvel","Caminhão","Van","Ônibus","Moto"].map(n=>({id:n,nome:n})),
     perguntas: perguntasAcidenteVeicular()
   },
   {
-    id:"vegetacao", nome:"Fogo em Vegetação",
+    id:"vegetacao", nome:"Fogo em Vegetação", missao:"INCÊNDIO",
     quantidadeVeiculos:false,
     subtipos:["Beira de Via/Rodovia","Mata Rural","Mata Urbana","Montanha/Floresta","Morro/Encosta","Terreno Baldio"].map(n=>({id:n,nome:n})),
     perguntas:[SITUACAO_VEGETACAO, DANOS, INFO_VEGETACAO, FERRAMENTAS_VEGETACAO, VITIMAS, SITUACAO_VITIMAS, RECURSOS, OBSERVACOES]
@@ -132,22 +132,33 @@ const TIPOS = [
 const state = {
   screen: 1, // 1 tipo, 2 subtipo, 3 perguntas, 4 informe
   tipoId: null,
-  subtipoId: null,
+  subtipoIds: [],
   quantidadeVeiculos: 0,
   residencial: { tipoImovel:null, andar:0, pavimentos:0, pavimentoFogo:0, comodos:[] },
   respostas: {}, // por pergunta.key
+  endereco: "",
+  coordenadas: "",
+  geradoEm: null,
 };
 
 function tipoAtual(){ return TIPOS.find(t=>t.id===state.tipoId); }
-function subtipoAtual(){ const t=tipoAtual(); return t && t.subtipos.find(s=>s.id===state.subtipoId); }
+function subtiposSelecionados(){ const t=tipoAtual(); return t ? t.subtipos.filter(s=>state.subtipoIds.includes(s.id)) : []; }
+function algumSubtipoResidencial(){ return subtiposSelecionados().some(s=>s.residencial); }
+function toggleSubtipo(id){
+  const i = state.subtipoIds.indexOf(id);
+  if(i>=0) state.subtipoIds.splice(i,1); else state.subtipoIds.push(id);
+}
 
 function resetForm(){
   state.screen = 1;
   state.tipoId = null;
-  state.subtipoId = null;
+  state.subtipoIds = [];
   state.quantidadeVeiculos = 0;
   state.residencial = { tipoImovel:null, andar:0, pavimentos:0, pavimentoFogo:0, comodos:[] };
   state.respostas = {};
+  state.endereco = "";
+  state.coordenadas = "";
+  state.geradoEm = null;
   render();
   window.scrollTo(0,0);
 }
@@ -194,7 +205,7 @@ function el(tag, className, text){
 }
 
 function renderStepper(){
-  const steps = ["Ocorrência","Local","Detalhes","Informe"];
+  const steps = ["Tipo","Subtipo","Detalhes","Informe"];
   const bar = el("div","stepper");
   steps.forEach((s,idx)=>{
     const n = idx+1;
@@ -212,21 +223,18 @@ function renderTipoScreen(){
   const c = el("div","screen");
   c.appendChild(el("h1","screen-title","Tipo de Ocorrência"));
   c.appendChild(el("p","screen-sub","Escolha única — selecione o tipo de ocorrência atendida"));
-  const list = el("div","option-grid");
+  const list = el("div","stack-list");
   TIPOS.forEach(t=>{
-    const btn = el("button","tile"+(state.tipoId===t.id?" selected":""));
+    const selected = state.tipoId===t.id;
+    const btn = el("button","opt-row"+(selected?" selected":""));
     btn.type="button";
-    btn.appendChild(el("span","tile-icon", tipoIcon(t.id)));
-    btn.appendChild(el("span","tile-label", t.nome));
-    btn.onclick = ()=>{ state.tipoId=t.id; state.subtipoId=null; state.quantidadeVeiculos=0; state.respostas={}; state.screen=2; render(); window.scrollTo(0,0); };
+    btn.appendChild(el("span","mark", selected?"●":"○"));
+    btn.appendChild(el("span","", t.nome));
+    btn.onclick = ()=>{ state.tipoId=t.id; state.subtipoIds=[]; state.quantidadeVeiculos=0; state.respostas={}; state.screen=2; render(); window.scrollTo(0,0); };
     list.appendChild(btn);
   });
   c.appendChild(list);
   return c;
-}
-
-function tipoIcon(id){
-  return {incendio_edif:"🏠🔥", fogo_veiculo:"🚗🔥", colisao:"💥", capotagem:"🔄", queda:"⬇️", vegetacao:"🌳🔥"}[id] || "•";
 }
 
 /* ---------- Tela 2: Subtipo ---------- */
@@ -236,28 +244,30 @@ function renderSubtipoScreen(){
   const c = el("div","screen");
   c.appendChild(navBar(()=>{state.screen=1;render();}));
   c.appendChild(el("h1","screen-title", t.nome));
-  c.appendChild(el("p","screen-sub","Escolha única — selecione o subtipo"));
+  c.appendChild(el("p","screen-sub","Podendo ser escolhido mais de um subtipo"));
 
   if(t.quantidadeVeiculos){
     c.appendChild(counterField("Quantidade de veículos", state.quantidadeVeiculos, v=>{state.quantidadeVeiculos=v; render();}));
   }
 
-  const list = el("div","option-list");
+  const list = el("div","stack-list");
   t.subtipos.forEach(s=>{
-    const btn = el("button","chip"+(state.subtipoId===s.id?" selected":""));
+    const selected = state.subtipoIds.includes(s.id);
+    const btn = el("button","opt-row"+(selected?" selected":""));
     btn.type="button";
-    btn.textContent = s.nome;
-    btn.onclick = ()=>{ state.subtipoId=s.id; render(); window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"}); };
+    btn.appendChild(el("span","mark", selected?"☑":"☐"));
+    btn.appendChild(el("span","", s.nome));
+    btn.onclick = ()=>{ toggleSubtipo(s.id); render(); };
     list.appendChild(btn);
   });
   c.appendChild(list);
 
-  if(state.subtipoId && subtipoAtual() && subtipoAtual().residencial){
+  if(algumSubtipoResidencial()){
     c.appendChild(renderResidencialDetalhes());
   }
 
   const next = el("button","btn-primary btn-block","Avançar");
-  next.disabled = !state.subtipoId;
+  next.disabled = state.subtipoIds.length===0;
   next.onclick = ()=>{ state.screen=3; render(); window.scrollTo(0,0); };
   c.appendChild(next);
   return c;
@@ -327,14 +337,14 @@ function renderPerguntasScreen(){
   const c = el("div","screen");
   c.appendChild(navBar(()=>{state.screen=2;render();}));
   c.appendChild(el("h1","screen-title","Detalhes da Ocorrência"));
-  c.appendChild(el("p","screen-sub", t.nome + " — " + (subtipoAtual()?subtipoAtual().nome:"")));
+  c.appendChild(el("p","screen-sub", t.nome + " — " + subtiposSelecionados().map(s=>s.nome).join(", ")));
 
   t.perguntas.forEach(p=>{
     c.appendChild(renderPergunta(p));
   });
 
-  const next = el("button","btn-primary btn-block","Gerar Informe");
-  next.onclick = ()=>{ state.screen=4; render(); window.scrollTo(0,0); };
+  const next = el("button","btn-primary btn-yellow btn-block","Gerar Informe");
+  next.onclick = ()=>{ state.geradoEm = new Date(); state.screen=4; render(); window.scrollTo(0,0); };
   c.appendChild(next);
   return c;
 }
@@ -352,41 +362,34 @@ function renderPergunta(p){
   return box;
 }
 
+function stackOptions(options, isSelectedFn, onToggle){
+  const list = el("div","stack-list");
+  options.forEach(op=>{
+    const selected = isSelectedFn(op);
+    const b = el("button","opt-row"+(selected?" selected":""));
+    b.type="button";
+    b.appendChild(el("span","mark", selected?"☑":"☐"));
+    b.appendChild(el("span","", op));
+    b.onclick=()=>{ onToggle(op); render(); };
+    list.appendChild(b);
+  });
+  return list;
+}
+
 function renderCheckboxBlock(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
-  const row = el("div","chip-row wrap");
-  p.options.forEach(op=>{
-    const b = el("button","chip small"+(isChecked(p.key,op)?" selected":""), op);
-    b.type="button";
-    b.onclick=()=>{toggleCheckbox(p.key,op); render();};
-    row.appendChild(b);
-  });
-  box.appendChild(row);
+  box.appendChild(stackOptions(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
   if(p.extra){
     box.appendChild(el("div","field-label mt", p.extra.label));
-    const row2 = el("div","chip-row wrap");
-    p.extra.options.forEach(op=>{
-      const key = p.key+"_extra";
-      const b = el("button","chip small"+(isChecked(key,op)?" selected":""), op);
-      b.type="button";
-      b.onclick=()=>{toggleCheckbox(key,op); render();};
-      row2.appendChild(b);
-    });
-    box.appendChild(row2);
+    const key = p.key+"_extra";
+    box.appendChild(stackOptions(p.extra.options, op=>isChecked(key,op), op=>toggleCheckbox(key,op)));
   }
   return box;
 }
 
 function renderCheckboxComTexto(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
-  const row = el("div","chip-row wrap");
-  p.options.forEach(op=>{
-    const b = el("button","chip small"+(isChecked(p.key,op)?" selected":""), op);
-    b.type="button";
-    b.onclick=()=>{toggleCheckbox(p.key,op); render();};
-    row.appendChild(b);
-  });
-  box.appendChild(row);
+  box.appendChild(stackOptions(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
   const r = getResp(p.key);
   const input = el("input","text-input");
   input.type="text"; input.placeholder = p.textoLabel + "...";
@@ -399,31 +402,33 @@ function renderCheckboxComTexto(p, box){
 function renderMaterialBlock(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
   const r = getResp(p.key);
-  const classRow = el("div","chip-row wrap");
+  if(!r.classes) r.classes = {};
   p.classes.forEach(cl=>{
-    const b = el("button","chip small"+(r.classe===cl.nome?" selected":""), cl.nome);
+    const active = Object.prototype.hasOwnProperty.call(r.classes, cl.nome);
+    const clBox = el("div","material-class-block");
+    const b = el("button","opt-row"+(active?" selected":""));
     b.type="button";
-    b.onclick=()=>{ r.classe = (r.classe===cl.nome? null : cl.nome); r.itens=[]; render(); };
-    classRow.appendChild(b);
+    b.appendChild(el("span","mark", active?"☑":"☐"));
+    b.appendChild(el("span","", cl.nome));
+    b.onclick=()=>{
+      if(active) delete r.classes[cl.nome];
+      else r.classes[cl.nome] = [];
+      render();
+    };
+    clBox.appendChild(b);
+    if(active){
+      const itemsBox = el("div","material-items");
+      itemsBox.appendChild(stackOptions(cl.itens,
+        it=>r.classes[cl.nome].includes(it),
+        it=>{
+          const arr = r.classes[cl.nome];
+          const i = arr.indexOf(it);
+          if(i>=0) arr.splice(i,1); else arr.push(it);
+        }));
+      clBox.appendChild(itemsBox);
+    }
+    box.appendChild(clBox);
   });
-  box.appendChild(classRow);
-  if(r.classe){
-    const cl = p.classes.find(c=>c.nome===r.classe);
-    const itemRow = el("div","chip-row wrap mt");
-    cl.itens.forEach(it=>{
-      const active = (r.itens||[]).includes(it);
-      const b = el("button","chip small"+(active?" selected":""), it);
-      b.type="button";
-      b.onclick=()=>{
-        if(!r.itens) r.itens=[];
-        const i=r.itens.indexOf(it);
-        if(i>=0) r.itens.splice(i,1); else r.itens.push(it);
-        render();
-      };
-      itemRow.appendChild(b);
-    });
-    box.appendChild(itemRow);
-  }
   return box;
 }
 
@@ -432,16 +437,8 @@ function renderGruposBlock(p, box){
   const r = getResp(p.key);
   p.grupos.forEach(g=>{
     box.appendChild(el("div","field-label mt", g.nome));
-    const row = el("div","chip-row wrap");
-    g.options.forEach(op=>{
-      const gkey = p.key+"_"+g.nome;
-      const active = r[gkey]===op;
-      const b = el("button","chip small"+(active?" selected":""), op);
-      b.type="button";
-      b.onclick=()=>{ r[gkey] = (r[gkey]===op? null : op); render(); };
-      row.appendChild(b);
-    });
-    box.appendChild(row);
+    const gkey = p.key+"_"+g.nome;
+    box.appendChild(stackOptions(g.options, op=>r[gkey]===op, op=>{ r[gkey] = (r[gkey]===op? null : op); }));
   });
   return box;
 }
@@ -459,8 +456,10 @@ function renderContadoresBlock(p, box){
 function renderVitimasBlock(box){
   box.appendChild(el("h3","subpanel-title","Vítimas"));
   const r = getResp("vitimas");
-  const semBtn = el("button","chip small"+(r.sem?" selected":""),"Sem vítimas");
+  const semBtn = el("button","opt-row"+(r.sem?" selected":""));
   semBtn.type="button";
+  semBtn.appendChild(el("span","mark", r.sem?"☑":"☐"));
+  semBtn.appendChild(el("span","","Sem vítimas"));
   semBtn.onclick=()=>{ r.sem=!r.sem; render(); };
   box.appendChild(semBtn);
   if(!r.sem){
@@ -477,20 +476,14 @@ function renderRecursosBlock(p, box){
   box.appendChild(el("h3","subpanel-title","Recursos"));
   const r = getResp("recursos");
   box.appendChild(counterField("Viaturas empregadas", r.viaturas||0, v=>{r.viaturas=v; render();}));
-  const row = el("div","chip-row wrap");
-  p.viaturaOptions.forEach(op=>{
-    const active = (r.tipos||[]).includes(op);
-    const b = el("button","chip small"+(active?" selected":""), op);
-    b.type="button";
-    b.onclick=()=>{
+  box.appendChild(el("div","field-label mt","Tipo de Viatura"));
+  box.appendChild(stackOptions(p.viaturaOptions,
+    op=>(r.tipos||[]).includes(op),
+    op=>{
       if(!r.tipos) r.tipos=[];
       const i=r.tipos.indexOf(op);
       if(i>=0) r.tipos.splice(i,1); else r.tipos.push(op);
-      render();
-    };
-    row.appendChild(b);
-  });
-  box.appendChild(row);
+    }));
   box.appendChild(counterField("Efetivo empregado", r.efetivo||0, v=>{r.efetivo=v; render();}));
   return box;
 }
@@ -520,109 +513,150 @@ function navBar(onBack){
 
 /* ---------- Geração do Informe ---------- */
 
+const SEPARADOR = "--------------------------------";
+
+function pad2(n){ return String(n).padStart(2,"0"); }
+
 function gerarTextoInforme(){
   const t = tipoAtual();
-  const st = subtipoAtual();
-  const linhas = [];
-  linhas.push("*INFORME OPERACIONAL — AVALIAÇÃO DA CENA*");
-  linhas.push("Data/Hora: " + new Date().toLocaleString("pt-BR"));
-  linhas.push("");
-  linhas.push("*Tipo:* " + t.nome);
-  linhas.push("*Subtipo:* " + (st?st.nome:"—"));
+  const subs = subtiposSelecionados();
+  const blocos = [];
 
-  if(t.quantidadeVeiculos){
-    linhas.push("*Quantidade de veículos:* " + state.quantidadeVeiculos);
-  }
+  /* Bloco 1: cabeçalho */
+  const cab = ["AVALIAÇÃO DA CENA"];
+  const agora = state.geradoEm || new Date();
+  cab.push("DATA: " + agora.toLocaleDateString("pt-BR"));
+  cab.push("HORA: " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
+  if(state.coordenadas.trim()) cab.push("COORDENADAS: " + state.coordenadas.trim());
+  if(state.endereco.trim()) cab.push("ENDEREÇO: " + state.endereco.trim());
+  cab.push("MISSÃO: " + (t.missao || ""));
+  blocos.push(cab);
 
-  if(st && st.residencial){
+  /* Bloco 2: tipo / subtipo / detalhes de local */
+  const loc = [];
+  loc.push("TIPO: " + t.nome.toUpperCase());
+  if(subs.length) loc.push("SUBTIPO: " + subs.map(s=>s.nome).join(", "));
+  if(t.quantidadeVeiculos && state.quantidadeVeiculos>0) loc.push("Quantidade de veículos: " + state.quantidadeVeiculos);
+  if(subs.some(s=>s.residencial)){
     const rd = state.residencial;
-    linhas.push("");
-    linhas.push("*Detalhes da Edificação:*");
-    if(rd.tipoImovel) linhas.push("- Tipo de imóvel: " + rd.tipoImovel);
-    linhas.push("- Andar: " + rd.andar);
-    linhas.push("- Pavimentos: " + rd.pavimentos);
-    linhas.push("- Fogo no pavimento: " + rd.pavimentoFogo);
-    if(rd.comodos.length) linhas.push("- Cômodo(s): " + rd.comodos.join(", "));
+    if(rd.tipoImovel) loc.push("Edificação: " + rd.tipoImovel);
+    if(rd.andar>0) loc.push("Andar: " + rd.andar);
+    if(rd.pavimentos>0) loc.push("Pavimentos: " + pad2(rd.pavimentos));
+    if(rd.pavimentoFogo>0) loc.push("Fogo no pavimento: " + pad2(rd.pavimentoFogo));
+    if(rd.comodos.length) loc.push("Cômodo(s) com fogo: " + rd.comodos.join(", "));
   }
+  blocos.push(loc);
 
+  /* Bloco 3: situação / danos / material / bloqueio / info específicas */
+  const sit = [];
   t.perguntas.forEach(p=>{
     const r = state.respostas[p.key];
-    if(p.type==="checkbox"){
-      if(r && r.opts && r.opts.length){
-        linhas.push("");
-        linhas.push("*"+p.label+":* " + r.opts.join(", "));
-      }
-      if(p.extra){
-        const re = state.respostas[p.key+"_extra"];
-        if(re && re.opts && re.opts.length) linhas.push("*"+p.extra.label+":* " + re.opts.join(", "));
-      }
-    } else if(p.type==="checkboxComTexto"){
-      if(r && ((r.opts&&r.opts.length)||r.texto)){
-        linhas.push("");
-        linhas.push("*"+p.label+":* " + (r.opts?r.opts.join(", "):""));
-        if(r.texto) linhas.push("- " + p.textoLabel + ": " + r.texto);
-      }
-    } else if(p.type==="material"){
-      if(r && r.classe){
-        linhas.push("");
-        linhas.push("*"+p.label+":* " + r.classe);
-        if(r.itens && r.itens.length) linhas.push("- Itens: " + r.itens.join(", "));
-      }
+    if(!r) return;
+    if(p.type==="checkbox" && p.key==="situacao" && r.opts && r.opts.length){
+      sit.push("SITUAÇÃO ENCONTRADA: " + r.opts.join(", "));
+    } else if(p.type==="checkbox" && p.key==="danos" && r.opts && r.opts.length){
+      sit.push("DANOS: " + r.opts.join(", "));
+    } else if(p.type==="material" && r.classes){
+      const partes = Object.entries(r.classes)
+        .filter(([k,itens])=>itens.length>0)
+        .map(([k,itens])=>k+" — "+itens.join(", "));
+      if(partes.length) sit.push("MATERIAL QUEIMANDO: " + partes.join(" | "));
+    } else if(p.type==="checkbox" && p.key==="bloqueio" && r.opts && r.opts.length){
+      sit.push("BLOQUEIO DA VIA: " + r.opts.join(", "));
+    } else if(p.type==="checkboxComTexto" && p.key==="materialTransportado" && ((r.opts&&r.opts.length)||r.texto)){
+      let linha = "MATERIAL TRANSPORTADO: " + (r.opts&&r.opts.length? r.opts.join(", ") : "");
+      if(r.texto && r.texto.trim()) linha += " (Qual: " + r.texto.trim() + ")";
+      sit.push(linha.trim());
     } else if(p.type==="grupos"){
-      const any = p.grupos.some(g=>r && r[p.key+"_"+g.nome]);
-      if(any){
-        linhas.push("");
-        linhas.push("*"+p.label+":*");
-        p.grupos.forEach(g=>{
-          const v = r && r[p.key+"_"+g.nome];
-          if(v) linhas.push("- " + g.nome + ": " + v);
-        });
-      }
-    } else if(p.type==="contadores"){
-      if(r && r.counts){
-        const entries = Object.entries(r.counts).filter(([k,v])=>v>0);
-        if(entries.length){
-          linhas.push("");
-          linhas.push("*"+p.label+":* " + entries.map(([k,v])=>k+" ("+v+")").join(", "));
-        }
-      }
-    } else if(p.type==="vitimas"){
-      linhas.push("");
-      if(r && r.sem){
-        linhas.push("*Vítimas:* Sem vítimas");
-      } else if(r){
-        linhas.push("*Vítimas:* " + (r.total||0));
-        linhas.push("- Verdes: " + (r.verde||0) + " | Amarelas: " + (r.amarelo||0) + " | Vermelhas: " + (r.vermelho||0) + " | Cinzas: " + (r.cinza||0));
-      }
-    } else if(p.type==="recursos"){
-      linhas.push("");
-      linhas.push("*Recursos:*");
-      if(r){
-        linhas.push("- Viaturas empregadas: " + (r.viaturas||0) + (r.tipos&&r.tipos.length? " ("+r.tipos.join(", ")+")":""));
-        linhas.push("- Efetivo empregado: " + (r.efetivo||0));
-      }
-    } else if(p.type==="texto"){
-      if(r && r.texto){
-        linhas.push("");
-        linhas.push("*"+p.label+":* " + r.texto);
-      }
+      const partes = p.grupos
+        .map(g=>({nome:g.nome, valor:r[p.key+"_"+g.nome]}))
+        .filter(x=>x.valor)
+        .map(x=>x.nome+": "+x.valor);
+      if(partes.length) sit.push("INFORMAÇÕES ADICIONAIS: " + partes.join(" | "));
+    } else if(p.type==="contadores" && r.counts){
+      const entries = Object.entries(r.counts).filter(([k,v])=>v>0);
+      if(entries.length) sit.push("FERRAMENTAS: " + entries.map(([k,v])=>k+" ("+v+")").join(", "));
     }
   });
+  blocos.push(sit);
 
-  return linhas.join("\n");
+  /* Bloco 4: vítimas */
+  const vit = [];
+  const rv = state.respostas["vitimas"];
+  if(rv){
+    if(rv.sem){
+      vit.push("VÍTIMAS: Sem vítimas");
+    } else {
+      const partes = [];
+      if(rv.total>0) partes.push(String(rv.total));
+      if(rv.verde>0) partes.push("Verdes: "+rv.verde);
+      if(rv.amarelo>0) partes.push("Amarelas: "+rv.amarelo);
+      if(rv.vermelho>0) partes.push("Vermelhas: "+rv.vermelho);
+      if(rv.cinza>0) partes.push("Cinzas: "+rv.cinza);
+      if(partes.length) vit.push("VÍTIMAS: " + partes.join(" | "));
+    }
+  }
+  const rsv = state.respostas["situacaoVitimas"];
+  const rsvExtra = state.respostas["situacaoVitimas_extra"];
+  if((rsv && rsv.opts && rsv.opts.length) || (rsvExtra && rsvExtra.opts && rsvExtra.opts.length)){
+    let linha = "SITUAÇÃO DAS VÍTIMAS: " + (rsv&&rsv.opts? rsv.opts.join(", ") : "");
+    if(rsvExtra && rsvExtra.opts && rsvExtra.opts.length) linha += " (" + rsvExtra.opts.join(", ") + ")";
+    vit.push(linha.trim());
+  }
+  blocos.push(vit);
+
+  /* Bloco 5: recursos */
+  const rec = [];
+  const rr = state.respostas["recursos"];
+  if(rr){
+    const partes = [];
+    if(rr.viaturas>0) partes.push("Vtrs: " + rr.viaturas + (rr.tipos&&rr.tipos.length? " ("+rr.tipos.join(", ")+")":""));
+    if(rr.efetivo>0) partes.push("Efetivo: " + rr.efetivo);
+    if(partes.length) rec.push("RECURSOS: " + partes.join(" | "));
+  }
+  blocos.push(rec);
+
+  /* Bloco 6: observações */
+  const obs = [];
+  const ro = state.respostas["observacoes"];
+  if(ro && ro.texto && ro.texto.trim()) obs.push("OBSERVAÇÕES: " + ro.texto.trim());
+  blocos.push(obs);
+
+  const naoVazios = blocos.filter(b=>b.length>0);
+  return naoVazios.map(b=>b.join("\n")).join("\n"+SEPARADOR+"\n");
 }
 
 /* ---------- Tela 4: Informe ---------- */
+
+let ticketPreRef = null;
+
+function refreshTicketPre(){
+  if(ticketPreRef) ticketPreRef.textContent = gerarTextoInforme();
+}
 
 function renderInformeScreen(){
   const c = el("div","screen");
   c.appendChild(navBar(()=>{state.screen=3;render();}));
   c.appendChild(el("h1","screen-title","Informe Operacional"));
 
+  const preFields = el("div","pre-ticket-fields");
+  const inputEndereco = el("input","text-input");
+  inputEndereco.type="text"; inputEndereco.placeholder="Ex: Rua das Flores, 123 — Centro";
+  inputEndereco.value = state.endereco;
+  inputEndereco.oninput = (e)=>{ state.endereco = e.target.value; refreshTicketPre(); };
+  preFields.appendChild(labeledField("Endereço", inputEndereco));
+
+  const inputCoord = el("input","text-input");
+  inputCoord.type="text"; inputCoord.placeholder="Ex: -22.5064, -43.1789";
+  inputCoord.value = state.coordenadas;
+  inputCoord.oninput = (e)=>{ state.coordenadas = e.target.value; refreshTicketPre(); };
+  preFields.appendChild(labeledField("Coordenadas", inputCoord));
+  c.appendChild(preFields);
+
   const ticket = el("div","ticket");
-  const texto = gerarTextoInforme();
   const pre = el("pre","ticket-text");
-  pre.textContent = texto.replace(/\*/g,"");
+  pre.textContent = gerarTextoInforme();
+  ticketPreRef = pre;
   ticket.appendChild(pre);
   c.appendChild(ticket);
 
@@ -631,20 +665,21 @@ function renderInformeScreen(){
   const btnWpp = el("button","btn-action btn-whatsapp","📲 Enviar pelo WhatsApp");
   btnWpp.type="button";
   btnWpp.onclick = ()=>{
-    const url = "https://wa.me/?text=" + encodeURIComponent(texto);
+    const url = "https://wa.me/?text=" + encodeURIComponent(gerarTextoInforme());
     window.open(url, "_blank");
   };
 
   const btnCopy = el("button","btn-action btn-copy","📋 Copiar Texto");
   btnCopy.type="button";
   btnCopy.onclick = async ()=>{
+    const texto = gerarTextoInforme();
     try{
-      await navigator.clipboard.writeText(texto.replace(/\*/g,""));
+      await navigator.clipboard.writeText(texto);
       btnCopy.textContent = "✓ Copiado!";
       setTimeout(()=>{btnCopy.textContent="📋 Copiar Texto";}, 1800);
     }catch(e){
       const ta = document.createElement("textarea");
-      ta.value = texto.replace(/\*/g,"");
+      ta.value = texto;
       document.body.appendChild(ta);
       ta.select();
       document.execCommand("copy");

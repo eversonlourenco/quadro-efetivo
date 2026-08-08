@@ -73,6 +73,40 @@ icons/                → ícones do app (192px, 512px, 512px maskable)
 - **Perguntas e opções dos formulários:** editar as constantes no início de `js/app.js` (ex: `TIPOS`, `MATERIAL_EDIFICACOES`, listas de checkbox etc.) — dá para adicionar, remover ou renomear itens sem mexer no resto do código.
 - **Ícone do app:** substituir os arquivos em `icons/` mantendo os mesmos nomes e tamanhos.
 
+## Formato do Informe
+
+O texto gerado na tela 4 segue o modelo:
+
+```
+AVALIAÇÃO DA CENA
+DATA: 08/08/2026
+HORA: 01:41 (coleta das informações)
+COORDENADAS: -22.5064, -43.1789
+ENDEREÇO: Rua das Flores, 123 - Centro
+MISSÃO: INCÊNDIO
+--------------------------------
+TIPO: INCÊNDIO EM EDIFICAÇÕES
+SUBTIPO: Edificações Residenciais
+Edificação: Casa
+Andar: 1
+Pavimentos: 02
+Fogo no pavimento: 02
+Cômodo(s) com fogo: Sala, Cozinha
+--------------------------------
+SITUAÇÃO ENCONTRADA: Pequeno, Controlado
+DANOS: Parcial
+MATERIAL QUEIMANDO: Sólidos (Classe A) — Sofás, Camas, Colchões | Líquidos Inflamáveis (Classe B) — Gasolina
+--------------------------------
+VÍTIMAS: 4 | Verdes: 1 | Amarelas: 1 | Vermelhas: 1 | Cinzas: 1
+SITUAÇÃO DAS VÍTIMAS: Em atendimento (ASE, SAMU)
+--------------------------------
+RECURSOS: Vtrs: 3 (ABSL, ABS, ASE) | Efetivo: 9
+--------------------------------
+OBSERVAÇÕES: Atualização de perímetro concluída.
+```
+
+Campos e seções sem informação preenchida não aparecem no informe (a linha inteira, ou o bloco inteiro, some — em vez de ficar em branco). COORDENADAS e ENDEREÇO são digitados na própria tela do informe, logo acima do texto, e atualizam o texto automaticamente enquanto você digita. DATA e HORA são preenchidos sozinhos no momento em que você toca em "Gerar Informe". MISSÃO é definida automaticamente a partir do tipo de ocorrência (INCÊNDIO ou ACIDENTE DE TRÂNSITO).
+
 ## Observação sobre a estrutura do questionário
 
 O documento original definia claramente as perguntas para os tipos "Incêndio em Edificações", "Fogo em Veículo", "Queda de Veículo" e "Fogo em Vegetação". Para os tipos "Colisão de Veículos" e "Capotagem de Veículo" — que não tinham perguntas próprias listadas — foi aplicado o mesmo conjunto de perguntas de "Queda de Veículo", por serem todas ocorrências de trânsito com estrutura semelhante (situação encontrada, bloqueio de via, material transportado, vítimas, recursos). Ajuste livremente em `js/app.js` caso a sala de comunicações use um roteiro diferente para esses dois tipos.
