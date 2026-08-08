@@ -65,7 +65,7 @@ function perguntasAcidenteVeicular() {
 
 const SITUACAO_VEGETACAO = SITUACAO_INCENDIO;
 
-const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", type:"checkbox",
+const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", type:"grupos",
   grupos:[
     { nome:"Propriedade", options:["Pública","Privada","Não identificada"] },
     { nome:"Zoneamento", options:["Urbano","Rural","Unidade de Conservação"] },
