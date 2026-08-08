@@ -1,6 +1,5 @@
 /* =========================================================
    AVALIAÇÃO DA CENA — App de Informe Operacional
-   Lógica principal: dados, estado, navegação, geração de informe
    ========================================================= */
 
 /* ---------- Blocos de perguntas reutilizáveis ---------- */
@@ -130,15 +129,16 @@ const TIPOS = [
 /* ---------- Estado ---------- */
 
 const state = {
-  screen: 1, // 1 tipo, 2 subtipo, 3 perguntas, 4 informe
+  screen: 1,
   tipoId: null,
   subtipoIds: [],
   quantidadeVeiculos: 0,
   residencial: { tipoImovel:null, andar:0, pavimentos:0, pavimentoFogo:0, comodos:[] },
-  respostas: {}, // por pergunta.key
+  respostas: {},
   endereco: "",
   coordenadas: "",
   geradoEm: null,
+  buscandoGeo: false,
 };
 
 function tipoAtual(){ return TIPOS.find(t=>t.id===state.tipoId); }
@@ -156,12 +156,59 @@ function resetForm(){
   state.quantidadeVeiculos = 0;
   state.residencial = { tipoImovel:null, andar:0, pavimentos:0, pavimentoFogo:0, comodos:[] };
   state.respostas = {};
-  state.endereco = "";
-  state.coordenadas = "";
   state.geradoEm = null;
   render();
   window.scrollTo(0,0);
 }
+
+/* ---------- Coleta Automática de Geolocalização e Endereço ---------- */
+
+function capturarLocalizacaoAutomatica() {
+  if (!("geolocation" in navigator)) return;
+  state.buscandoGeo = true;
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lon = pos.coords.longitude.toFixed(6);
+      state.coordenadas = `${lat}, ${lon}`;
+
+      // Se houver internet, realiza a busca automática do endereço via OpenStreetMap
+      try {
+        const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && data.address) {
+            const a = data.address;
+            const rua = a.road || a.pedestrian || a.suburb || "";
+            const num = a.house_number ? `, ${a.house_number}` : "";
+            const bairro = a.suburb || a.neighbourhood || "";
+            const cidade = a.city || a.town || a.municipality || "";
+            
+            let endFmt = rua + num;
+            if (bairro && !rua.includes(bairro)) endFmt += (endFmt ? " - " : "") + bairro;
+            if (cidade) endFmt += (endFmt ? ", " : "") + cidade;
+
+            state.endereco = endFmt || data.display_name;
+          }
+        }
+      } catch(e) {
+        // Modo offline: mantém apenas as coordenadas
+      } finally {
+        state.buscandoGeo = false;
+        refreshTicketPre();
+      }
+    },
+    (err) => {
+      state.buscandoGeo = false;
+      refreshTicketPre();
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+  );
+}
+
+// Inicia a requisição da localização assim que abre a aplicação
+capturarLocalizacaoAutomatica();
 
 /* ---------- Helpers de resposta ---------- */
 
@@ -344,7 +391,13 @@ function renderPerguntasScreen(){
   });
 
   const next = el("button","btn-primary btn-yellow btn-block","Gerar Informe");
-  next.onclick = ()=>{ state.geradoEm = new Date(); state.screen=4; render(); window.scrollTo(0,0); };
+  next.onclick = ()=>{ 
+    state.geradoEm = new Date(); 
+    if(!state.coordenadas) capturarLocalizacaoAutomatica();
+    state.screen=4; 
+    render(); 
+    window.scrollTo(0,0); 
+  };
   c.appendChild(next);
   return c;
 }
@@ -362,36 +415,36 @@ function renderPergunta(p){
   return box;
 }
 
-function stackOptions(options, isSelectedFn, onToggle){
-  const list = el("div","stack-list");
+/* Renderização em GRID sem ícones (Até 3 por linha na Tela 3) */
+function gridOptionsNoIcons(options, isSelectedFn, onToggle){
+  const grid = el("div","grid-3-list");
   options.forEach(op=>{
     const selected = isSelectedFn(op);
-    const b = el("button","opt-row"+(selected?" selected":""));
+    const b = el("button","grid-btn"+(selected?" selected":""));
     b.type="button";
-    b.appendChild(el("span","mark", selected?"☑":"☐"));
-    b.appendChild(el("span","", op));
+    b.appendChild(el("span","grid-btn-text", op));
     b.onclick=()=>{ onToggle(op); render(); };
-    list.appendChild(b);
+    grid.appendChild(b);
   });
-  return list;
+  return grid;
 }
 
 function renderCheckboxBlock(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
-  box.appendChild(stackOptions(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
+  box.appendChild(gridOptionsNoIcons(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
   if(p.extra){
     box.appendChild(el("div","field-label mt", p.extra.label));
     const key = p.key+"_extra";
-    box.appendChild(stackOptions(p.extra.options, op=>isChecked(key,op), op=>toggleCheckbox(key,op)));
+    box.appendChild(gridOptionsNoIcons(p.extra.options, op=>isChecked(key,op), op=>toggleCheckbox(key,op)));
   }
   return box;
 }
 
 function renderCheckboxComTexto(p, box){
   box.appendChild(el("h3","subpanel-title", p.label));
-  box.appendChild(stackOptions(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
+  box.appendChild(gridOptionsNoIcons(p.options, op=>isChecked(p.key,op), op=>toggleCheckbox(p.key,op)));
   const r = getResp(p.key);
-  const input = el("input","text-input");
+  const input = el("input","text-input mt-2");
   input.type="text"; input.placeholder = p.textoLabel + "...";
   input.value = r.texto || "";
   input.oninput = (e)=>{ r.texto = e.target.value; };
@@ -406,10 +459,9 @@ function renderMaterialBlock(p, box){
   p.classes.forEach(cl=>{
     const active = Object.prototype.hasOwnProperty.call(r.classes, cl.nome);
     const clBox = el("div","material-class-block");
-    const b = el("button","opt-row"+(active?" selected":""));
+    const b = el("button","grid-btn full-width"+(active?" selected":""));
     b.type="button";
-    b.appendChild(el("span","mark", active?"☑":"☐"));
-    b.appendChild(el("span","", cl.nome));
+    b.appendChild(el("span","grid-btn-text", cl.nome));
     b.onclick=()=>{
       if(active) delete r.classes[cl.nome];
       else r.classes[cl.nome] = [];
@@ -418,7 +470,7 @@ function renderMaterialBlock(p, box){
     clBox.appendChild(b);
     if(active){
       const itemsBox = el("div","material-items");
-      itemsBox.appendChild(stackOptions(cl.itens,
+      itemsBox.appendChild(gridOptionsNoIcons(cl.itens,
         it=>r.classes[cl.nome].includes(it),
         it=>{
           const arr = r.classes[cl.nome];
@@ -438,7 +490,7 @@ function renderGruposBlock(p, box){
   p.grupos.forEach(g=>{
     box.appendChild(el("div","field-label mt", g.nome));
     const gkey = p.key+"_"+g.nome;
-    box.appendChild(stackOptions(g.options, op=>r[gkey]===op, op=>{ r[gkey] = (r[gkey]===op? null : op); }));
+    box.appendChild(gridOptionsNoIcons(g.options, op=>r[gkey]===op, op=>{ r[gkey] = (r[gkey]===op? null : op); }));
   });
   return box;
 }
@@ -456,10 +508,9 @@ function renderContadoresBlock(p, box){
 function renderVitimasBlock(box){
   box.appendChild(el("h3","subpanel-title","Vítimas"));
   const r = getResp("vitimas");
-  const semBtn = el("button","opt-row"+(r.sem?" selected":""));
+  const semBtn = el("button","grid-btn full-width"+(r.sem?" selected":""));
   semBtn.type="button";
-  semBtn.appendChild(el("span","mark", r.sem?"☑":"☐"));
-  semBtn.appendChild(el("span","","Sem vítimas"));
+  semBtn.appendChild(el("span","grid-btn-text","Sem vítimas"));
   semBtn.onclick=()=>{ r.sem=!r.sem; render(); };
   box.appendChild(semBtn);
   if(!r.sem){
@@ -477,7 +528,7 @@ function renderRecursosBlock(p, box){
   const r = getResp("recursos");
   box.appendChild(counterField("Viaturas empregadas", r.viaturas||0, v=>{r.viaturas=v; render();}));
   box.appendChild(el("div","field-label mt","Tipo de Viatura"));
-  box.appendChild(stackOptions(p.viaturaOptions,
+  box.appendChild(gridOptionsNoIcons(p.viaturaOptions,
     op=>(r.tipos||[]).includes(op),
     op=>{
       if(!r.tipos) r.tipos=[];
@@ -523,13 +574,13 @@ function gerarTextoInforme(){
   const blocos = [];
 
   /* Bloco 1: cabeçalho */
-  const cab = ["*AVALIAÇÃO DA CENA*"];
+  const cab = ["AVALIAÇÃO DA CENA"];
   const agora = state.geradoEm || new Date();
-  cab.push("*DATA:* " + agora.toLocaleDateString("pt-BR"));
-  cab.push("*HORA:* " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
-  if(state.coordenadas.trim()) cab.push("*COORDENADAS:* " + state.coordenadas.trim());
-  if(state.endereco.trim()) cab.push("*ENDEREÇO:* " + state.endereco.trim());
-  cab.push("*MISSÃO:* " + (t.missao || ""));
+  cab.push("DATA: " + agora.toLocaleDateString("pt-BR"));
+  cab.push("HORA: " + agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}) + " (coleta das informações)");
+  if(state.coordenadas.trim()) cab.push("COORDENADAS: " + state.coordenadas.trim());
+  if(state.endereco.trim()) cab.push("ENDEREÇO: " + state.endereco.trim());
+  cab.push("MISSÃO: " + (t.missao || ""));
   blocos.push(cab);
 
   /* Bloco 2: tipo / subtipo / detalhes de local */
@@ -568,14 +619,20 @@ function gerarTextoInforme(){
       if(r.texto && r.texto.trim()) linha += " (Qual: " + r.texto.trim() + ")";
       sit.push(linha.trim());
     } else if(p.type==="grupos"){
+      // FORMATAÇÃO INDIVIDUAL POR LINHA PARA VEGETAÇÃO
       const partes = p.grupos
         .map(g=>({nome:g.nome, valor:r[p.key+"_"+g.nome]}))
         .filter(x=>x.valor)
-        .map(x=>x.nome+": "+x.valor);
-      if(partes.length) sit.push("INFORMAÇÕES ADICIONAIS: " + partes.join(" | "));
+        .map(x=>x.nome + ": " + x.valor);
+      if(partes.length) {
+        sit.push("INFORMAÇÕES ADICIONAIS:\n" + partes.join("\n"));
+      }
     } else if(p.type==="contadores" && r.counts){
+      // FORMATAÇÃO INDIVIDUAL POR LINHA PARA FERRAMENTAS
       const entries = Object.entries(r.counts).filter(([k,v])=>v>0);
-      if(entries.length) sit.push("FERRAMENTAS: " + entries.map(([k,v])=>k+" ("+v+")").join(", "));
+      if(entries.length) {
+        sit.push("FERRAMENTAS:\n" + entries.map(([k,v])=> k + " (" + v + ")").join("\n"));
+      }
     }
   });
   blocos.push(sit);
@@ -638,20 +695,6 @@ function renderInformeScreen(){
   const c = el("div","screen");
   c.appendChild(navBar(()=>{state.screen=3;render();}));
   c.appendChild(el("h1","screen-title","Informe Operacional"));
-
-  const preFields = el("div","pre-ticket-fields");
-  const inputEndereco = el("input","text-input");
-  inputEndereco.type="text"; inputEndereco.placeholder="Ex: Rua das Flores, 123 — Centro";
-  inputEndereco.value = state.endereco;
-  inputEndereco.oninput = (e)=>{ state.endereco = e.target.value; refreshTicketPre(); };
-  preFields.appendChild(labeledField("Endereço", inputEndereco));
-
-  const inputCoord = el("input","text-input");
-  inputCoord.type="text"; inputCoord.placeholder="Ex: -22.5064, -43.1789";
-  inputCoord.value = state.coordenadas;
-  inputCoord.oninput = (e)=>{ state.coordenadas = e.target.value; refreshTicketPre(); };
-  preFields.appendChild(labeledField("Coordenadas", inputCoord));
-  c.appendChild(preFields);
 
   const ticket = el("div","ticket");
   const pre = el("pre","ticket-text");
