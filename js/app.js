@@ -294,7 +294,7 @@ function renderSubtipoScreen(){
     c.appendChild(counterField("Quantidade de veículos", state.quantidadeVeiculos, v=>{state.quantidadeVeiculos=v; render();}));
   }
 
-  const list = el("div","stack-list");
+  const list = el("div","grid-2-list");
   t.subtipos.forEach(s=>{
     const selected = state.subtipoIds.includes(s.id);
     const btn = el("button","opt-row"+(selected?" selected":""));
