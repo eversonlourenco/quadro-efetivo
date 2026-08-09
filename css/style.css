@@ -57,12 +57,20 @@ body{
 }
 .btn-back:active{ color:var(--text); }
 
-/* Listas verticais (Telas 1 e 2) */
+/* Listas verticais (Tela 1) */
 .stack-list{ display:flex; flex-direction:column; gap:10px; }
+
+/* Grid de 2 colunas para subtipos (Tela 2) */
+.grid-2-list{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
 
 .opt-row{
   width:100%;
-  display:flex; align-items:center; justify-index:flex-start;
+  display:flex; align-items:center; justify-content:flex-start;
   background:var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
   padding:15px 18px; color:var(--text); font-size:15px; font-weight:600;
   text-align:left; cursor:pointer; transition: all 0.15s ease;
