@@ -50,6 +50,18 @@ body{
 .screen-title{ font-size:22px; font-weight:800; letter-spacing:-0.01em; margin: 4px 0 4px; color:#ffffff; }
 .screen-sub{ color:var(--text-dim); font-size:13px; margin: 0 0 20px; line-height: 1.4; }
 
+/* Categorias da Tela 1 */
+.category-title{
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--amber);
+  margin: 18px 0 8px 0;
+  font-weight: 800;
+  border-bottom: 1px solid #473a0a;
+  padding-bottom: 4px;
+}
+
 .navbar{ margin-bottom: 12px; }
 .btn-back{
   background:none; border:none; color:var(--text-dim);
@@ -66,6 +78,34 @@ body{
   grid-template-columns: repeat(2, 1fr);
   gap: 8px;
   margin-bottom: 14px;
+}
+
+/* Destaque Amarelo para Quantidade de Veículos (Tela 2) */
+.counter-yellow-box {
+  background: var(--amber);
+  border-radius: var(--radius);
+  padding: 4px 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(255, 204, 0, 0.25);
+}
+.counter-yellow-box .field-label {
+  color: #121212 !important;
+  font-size: 13px;
+  font-weight: 800;
+}
+.counter-yellow-box .counter-val {
+  color: #121212;
+  font-weight: 900;
+  font-size: 17px;
+}
+.counter-yellow-box .counter-btn {
+  background: #121212;
+  border-color: #121212;
+  color: var(--amber);
+  font-weight: 800;
+}
+.counter-yellow-box .counter-row {
+  border-bottom: none;
 }
 
 .opt-row{
