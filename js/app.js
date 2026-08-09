@@ -15,17 +15,6 @@ const MATERIAL_EDIFICACOES = {
   ]
 };
 
-const MATERIAL_VEICULO = {
-  label: "Tipo de Material Queimando",
-  classes: [
-    { nome: "Sólidos (Classe A)", itens: ["Madeira","Papel","Tecido","Plásticos","Borracha","Papelão","Lixo"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
-    { nome: "Líquidos Inflamáveis (Classe B)", itens: ["Gasolina","Álcool","Óleo Diesel","Querosene","Óleos lubrificantes","Tintas"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
-    { nome: "Equipamentos Elétricos (Classe C)", itens: ["Transformadores","Quadros de força","Motores elétricos","Computadores","Cabos e fios","Painéis solares","Telecomunicação","Máquinas industriais","Ar-condicionado","Tomadas"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
-    { nome: "Metais Combustíveis (Classe D)", itens: ["Magnésio","Titânio","Lítio","Sódio","Potássio","Alumínio","Zinco"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
-    { nome: "Óleos e Gorduras (Classe K)", itens: ["Óleo de soja","Óleo de canola","Óleo de milho","Óleo de girassol","Óleo de oliva","Azeite"].sort((a,b)=>a.localeCompare(b,"pt-BR")) },
-  ]
-};
-
 const SITUACAO_INCENDIO = { key:"situacao", label:"Situação Encontrada", type:"checkbox",
   options:["Pequeno Incêndio","Médio Incêndio","Grande Incêndio","Propagando","Generalizado","Controlado","Extinto","Rescaldo"] };
 
@@ -77,61 +66,77 @@ const INFO_VEGETACAO = { key:"infoVegetacao", label:"Informações Adicionais", 
 const FERRAMENTAS_VEGETACAO = { key:"ferramentas", label:"Ferramentas", type:"contadores",
   options:["Abafador","Bomba Costal","Enxada","Pá","McLeod","Facão"] };
 
-/* ---------- Estrutura de Tipos (Ordenada Alfabeticamente) ---------- */
+/* ---------- Estrutura de Tipos Agrupados ---------- */
 
-const TIPOS_UNSORTED = [
+const CATEGORIAS_OCORRENCIAS = [
   {
-    id:"incendio_edif", nome:"Incêndio em Edificações", missao:"INCÊNDIO",
-    quantidadeVeiculos:false,
-    subtipos:[
-      { id:"deposito", nome:"Depósitos/Galpões" },
-      { id:"residencial", nome:"Edificações Residenciais", residencial:true },
-      { id:"comercial", nome:"Estabelecimentos Comerciais" },
-      { id:"industria", nome:"Indústrias" },
-      { id:"restaurante", nome:"Restaurante/Bar" },
-      { id:"publico", nome:"Órgãos Públicos" },
-    ],
-    perguntas: perguntasPadrao(MATERIAL_EDIFICACOES)
+    categoria: "Acidente",
+    tipos: [
+      {
+        id:"capotagem", nome:"Capotagem de Veículo", missao:"ACIDENTE DE TRÂNSITO",
+        quantidadeVeiculos:true,
+        subtipos:["Automóvel","Caminhão","Van","Ônibus"].map(n=>({id:n,nome:n})),
+        perguntas: perguntasAcidenteVeicular()
+      },
+      {
+        id:"colisao", nome:"Colisão de Veículos", missao:"ACIDENTE DE TRÂNSITO",
+        quantidadeVeiculos:true,
+        subtipos:["Automóvel","Bicicleta","Caminhão","Carroça","Moto","Moto elétrica","Muro","Poste","Trem","Van","Ônibus"].map(n=>({id:n,nome:n})),
+        perguntas: perguntasAcidenteVeicular()
+      },
+      {
+        id:"queda", nome:"Queda de Veículo", missao:"ACIDENTE DE TRÂNSITO",
+        quantidadeVeiculos:true,
+        subtipos:["Automóvel","Caminhão","Van","Ônibus","Moto"].map(n=>({id:n,nome:n})),
+        perguntas: perguntasAcidenteVeicular()
+      }
+    ]
   },
   {
-    id:"fogo_veiculo", nome:"Fogo em Veículo", missao:"INCÊNDIO",
-    quantidadeVeiculos:true,
-    subtipos:["Automóvel","Caminhão","Moto","Moto elétrica","Trem","Van","Ônibus"].map(n=>({id:n,nome:n})),
-    perguntas: perguntasPadrao(MATERIAL_VEICULO)
-  },
-  {
-    id:"colisao", nome:"Colisão de Veículos", missao:"ACIDENTE DE TRÂNSITO",
-    quantidadeVeiculos:true,
-    subtipos:["Automóvel","Bicicleta","Caminhão","Carroça","Moto","Moto elétrica","Muro","Poste","Trem","Van","Ônibus"].map(n=>({id:n,nome:n})),
-    perguntas: perguntasAcidenteVeicular()
-  },
-  {
-    id:"capotagem", nome:"Capotagem de Veículo", missao:"ACIDENTE DE TRÂNSITO",
-    quantidadeVeiculos:true,
-    subtipos:["Automóvel","Caminhão","Van","Ônibus"].map(n=>({id:n,nome:n})),
-    perguntas: perguntasAcidenteVeicular()
-  },
-  {
-    id:"queda", nome:"Queda de Veículo", missao:"ACIDENTE DE TRÂNSITO",
-    quantidadeVeiculos:true,
-    subtipos:["Automóvel","Caminhão","Van","Ônibus","Moto"].map(n=>({id:n,nome:n})),
-    perguntas: perguntasAcidenteVeicular()
-  },
-  {
-    id:"vegetacao", nome:"Fogo em Vegetação", missao:"INCÊNDIO",
-    quantidadeVeiculos:false,
-    subtipos:["Beira de Via/Rodovia","Mata Rural","Mata Urbana","Montanha/Floresta","Morro/Encosta","Terreno Baldio"].map(n=>({id:n,nome:n})),
-    perguntas:[SITUACAO_VEGETACAO, DANOS, INFO_VEGETACAO, FERRAMENTAS_VEGETACAO, VITIMAS, SITUACAO_VITIMAS, RECURSOS, OBSERVACOES]
-  },
+    categoria: "Incêndio",
+    tipos: [
+      {
+        id:"vegetacao", nome:"Fogo em Vegetação", missao:"INCÊNDIO",
+        quantidadeVeiculos:false,
+        subtipos:["Beira de Via/Rodovia","Mata Rural","Mata Urbana","Montanha/Floresta","Morro/Encosta","Terreno Baldio"].map(n=>({id:n,nome:n})),
+        perguntas:[SITUACAO_VEGETACAO, DANOS, INFO_VEGETACAO, FERRAMENTAS_VEGETACAO, VITIMAS, SITUACAO_VITIMAS, RECURSOS, OBSERVACOES]
+      },
+      {
+        id:"fogo_veiculo", nome:"Fogo em Veículo", missao:"INCÊNDIO",
+        quantidadeVeiculos:true,
+        subtipos:["Automóvel","Caminhão","Moto","Moto elétrica","Trem","Van","Ônibus"].map(n=>({id:n,nome:n})),
+        perguntas: perguntasPadrao(null, [MATERIAL_TRANSPORTADO])
+      },
+      {
+        id:"incendio_edif", nome:"Incêndio em Edificações", missao:"INCÊNDIO",
+        quantidadeVeiculos:false,
+        subtipos:[
+          { id:"deposito", nome:"Depósitos/Galpões" },
+          { id:"residencial", nome:"Edificações Residenciais", residencial:true },
+          { id:"comercial", nome:"Estabelecimentos Comerciais" },
+          { id:"industria", nome:"Indústrias" },
+          { id:"restaurante", nome:"Restaurante/Bar" },
+          { id:"publico", nome:"Órgãos Públicos" },
+        ],
+        perguntas: perguntasPadrao(MATERIAL_EDIFICACOES)
+      }
+    ]
+  }
 ];
 
-/* Ordenação A-Z dos Tipos e Subtipos */
-const TIPOS = TIPOS_UNSORTED
-  .map(t => ({
-    ...t,
-    subtipos: [...t.subtipos].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-  }))
-  .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+/* Ordenação A-Z dos Subtipos internos de cada Tipo */
+CATEGORIAS_OCORRENCIAS.forEach(cat => {
+  cat.tipos.forEach(t => {
+    t.subtipos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  });
+  cat.tipos.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+});
+
+function obterTodosTipos(){
+  const todos = [];
+  CATEGORIAS_OCORRENCIAS.forEach(cat => todos.push(...cat.tipos));
+  return todos;
+}
 
 /* ---------- Estado ---------- */
 
@@ -148,7 +153,7 @@ const state = {
   buscandoGeo: false,
 };
 
-function tipoAtual(){ return TIPOS.find(t=>t.id===state.tipoId); }
+function tipoAtual(){ return obterTodosTipos().find(t=>t.id===state.tipoId); }
 function subtiposSelecionados(){ const t=tipoAtual(); return t ? t.subtipos.filter(s=>state.subtipoIds.includes(s.id)) : []; }
 function algumSubtipoResidencial(){ return subtiposSelecionados().some(s=>s.residencial); }
 function toggleSubtipo(id){
@@ -254,34 +259,41 @@ function el(tag, className, text){
   return e;
 }
 
-/* ---------- Tela 1: Tipo (A-Z) ---------- */
+/* ---------- Tela 1: Tipo (Separado em Categoria: Acidente e Incêndio) ---------- */
 
 function renderTipoScreen(){
   const c = el("div","screen");
   c.appendChild(el("h1","screen-title","Tipo de Ocorrência"));
   c.appendChild(el("p","screen-sub","Escolha única — selecione o tipo de ocorrência atendida"));
-  const list = el("div","stack-list");
-  TIPOS.forEach(t=>{
-    const selected = state.tipoId===t.id;
-    const btn = el("button","opt-row opt-row-primary"+(selected?" selected":""));
-    btn.type="button";
-    btn.appendChild(el("span","btn-label-clean", t.nome));
-    btn.onclick = ()=>{
-      state.tipoId=t.id;
-      state.subtipoIds=[]; 
-      state.quantidadeVeiculos=0; 
-      state.respostas={}; 
-      state.screen=2; 
-      render(); 
-      window.scrollTo(0,0); 
-    };
-    list.appendChild(btn);
+
+  CATEGORIAS_OCORRENCIAS.forEach(cat=>{
+    const sectionTitle = el("h2","category-title", cat.categoria);
+    c.appendChild(sectionTitle);
+
+    const list = el("div","stack-list");
+    cat.tipos.forEach(t=>{
+      const selected = state.tipoId===t.id;
+      const btn = el("button","opt-row opt-row-primary"+(selected?" selected":""));
+      btn.type="button";
+      btn.appendChild(el("span","btn-label-clean", t.nome));
+      btn.onclick = ()=>{
+        state.tipoId=t.id;
+        state.subtipoIds=[]; 
+        state.quantidadeVeiculos=0; 
+        state.respostas={}; 
+        state.screen=2; 
+        render(); 
+        window.scrollTo(0,0); 
+      };
+      list.appendChild(btn);
+    });
+    c.appendChild(list);
   });
-  c.appendChild(list);
+
   return c;
 }
 
-/* ---------- Tela 2: Subtipo (A-Z) ---------- */
+/* ---------- Tela 2: Subtipo ---------- */
 
 function renderSubtipoScreen(){
   const t = tipoAtual();
@@ -291,7 +303,9 @@ function renderSubtipoScreen(){
   c.appendChild(el("p","screen-sub","Podendo ser escolhido mais de um subtipo"));
 
   if(t.quantidadeVeiculos){
-    c.appendChild(counterField("Quantidade de veículos", state.quantidadeVeiculos, v=>{state.quantidadeVeiculos=v; render();}));
+    const yellowBox = el("div","counter-yellow-box");
+    yellowBox.appendChild(counterField("Quantidade de veículos", state.quantidadeVeiculos, v=>{state.quantidadeVeiculos=v; render();}));
+    c.appendChild(yellowBox);
   }
 
   const list = el("div","grid-2-list");
