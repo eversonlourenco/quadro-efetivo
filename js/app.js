@@ -26,7 +26,7 @@ const SITUACAO_VITIMAS = { key:"situacaoVitimas", label:"Situação das Vítimas
   options:["Em atendimento","Removida para o hospital","Removida por populares","Recusou atendimento"],
   extra:{ label:"Órgão responsável", options:["ASE","ABSR","SAMU","CONCESSIONÁRIA","OUTROS"] } };
 
-const RECURSOS = { key:"recursos", type:"recursos", viaturaOptions:["ABSL","ABS","ASE","ABSR","AR"] };
+const RECURSOS = { key:"recursos", type:"recursos", viaturaOptions:["ABSL","ABS","ASE","ABSR","AR","AT"] };
 
 const OBSERVACOES = { key:"observacoes", label:"Observações", type:"texto" };
 
@@ -144,7 +144,8 @@ const state = {
   screen: 1,
   tipoId: null,
   subtipoIds: [],
-  quantidadeVeiculos: 0,
+  subtiposAdicionais: [],
+  veiculosSelecionados: [],
   residencial: { tipoImovel:null, andar:0, pavimentos:0, pavimentoFogo:0, comodos:[] },
   respostas: {},
   endereco: "",
@@ -165,7 +166,8 @@ function resetForm(){
   state.screen = 1;
   state.tipoId = null;
   state.subtipoIds = [];
-  state.quantidadeVeiculos = 0;
+  state.subtiposAdicionais = [];
+  state.veiculosSelecionados = [];
   state.residencial = { tipoImovel:null, andar:0, pavimentos:0, pavimentoFogo:0, comodos:[] };
   state.respostas = {};
   state.geradoEm = null;
@@ -176,14 +178,23 @@ function resetForm(){
 /* ---------- Coleta Automática de Geolocalização ---------- */
 
 function capturarLocalizacaoAutomatica() {
-  if (!("geolocation" in navigator)) return;
+  if (!("geolocation" in navigator)) {
+    state.geoStatus = "erro";
+    state.geoMensagem = "Seu navegador não suporta geolocalização.";
+    refreshTicketPre();
+    return;
+  }
+
   state.buscandoGeo = true;
+  state.geoStatus = "buscando";
+  render();
 
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
       const lat = pos.coords.latitude.toFixed(6);
       const lon = pos.coords.longitude.toFixed(6);
       state.coordenadas = `${lat}, ${lon}`;
+      state.geoStatus = "sucesso";
 
       try {
         const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`);
@@ -206,18 +217,22 @@ function capturarLocalizacaoAutomatica() {
       } catch(e) {
       } finally {
         state.buscandoGeo = false;
-        refreshTicketPre();
+        render();
       }
     },
     (err) => {
       state.buscandoGeo = false;
-      refreshTicketPre();
+      state.geoStatus = "erro";
+      if (err.code === err.PERMISSION_DENIED) {
+        state.geoMensagem = "Permissão de localização negada. Ative o GPS nas configurações do dispositivo/navegador.";
+      } else {
+        state.geoMensagem = "Não foi possível obter a localização. Por favor, ative o GPS e tente novamente.";
+      }
+      render();
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
   );
 }
-
-capturarLocalizacaoAutomatica();
 
 /* ---------- Helpers ---------- */
 
@@ -236,6 +251,29 @@ function toggleCheckbox(key, opt){
 function isChecked(key, opt){
   const r = state.respostas[key];
   return !!(r && r.opts && r.opts.includes(opt));
+}
+
+/* ---------- Componente de Navegação na mesma linha ---------- */
+
+function renderNavButtons(onBack, onNext, nextText = "Avançar", nextDisabled = false) {
+  const container = el("div", "nav-buttons");
+
+  if (onBack) {
+    const btnBack = el("button", "btn-blue", "Voltar");
+    btnBack.type = "button";
+    btnBack.onclick = onBack;
+    container.appendChild(btnBack);
+  }
+
+  if (onNext) {
+    const btnNext = el("button", "btn-primary", nextText);
+    btnNext.type = "button";
+    btnNext.disabled = nextDisabled;
+    btnNext.onclick = onNext;
+    container.appendChild(btnNext);
+  }
+
+  return container;
 }
 
 /* ---------- Render ---------- */
@@ -259,7 +297,7 @@ function el(tag, className, text){
   return e;
 }
 
-/* ---------- Tela 1: Tipo (Separado em Categoria: Acidente e Incêndio) ---------- */
+/* ---------- Tela 1: Tipo ---------- */
 
 function renderTipoScreen(){
   const c = el("div","screen");
@@ -279,7 +317,8 @@ function renderTipoScreen(){
       btn.onclick = ()=>{
         state.tipoId=t.id;
         state.subtipoIds=[]; 
-        state.quantidadeVeiculos=0; 
+        state.subtiposAdicionais=[];
+        state.veiculosSelecionados=[];
         state.respostas={}; 
         state.screen=2; 
         render(); 
@@ -298,35 +337,152 @@ function renderTipoScreen(){
 function renderSubtipoScreen(){
   const t = tipoAtual();
   const c = el("div","screen");
-  c.appendChild(navBar(()=>{state.screen=1;render();}));
-  c.appendChild(el("h1","screen-title", t.nome));
-  c.appendChild(el("p","screen-sub","Podendo ser escolhido mais de um subtipo"));
 
+  c.appendChild(el("h1","screen-title", t.nome));
+  c.appendChild(el("p","screen-sub", t.quantidadeVeiculos ? "Clique nos veículos para adicionar (cada clique conta +1)" : "Podendo ser escolhido mais de um subtipo"));
+
+  /* Se for ocorrência com Veículos */
   if(t.quantidadeVeiculos){
-    const yellowBox = el("div","counter-yellow-box");
-    yellowBox.appendChild(counterField("Quantidade de veículos", state.quantidadeVeiculos, v=>{state.quantidadeVeiculos=v; render();}));
+    const yellowBox = el("div","vehicle-summary-box");
+    
+    // Mostra apenas os veículos separados por 'x', sem o '00,' antes.
+    const textContent = state.veiculosSelecionados.length > 0 
+      ? state.veiculosSelecionados.join(" x ") 
+      : "Nenhum veículo selecionado";
+
+    const textEl = el("div", "vehicle-summary-text", textContent);
+    yellowBox.appendChild(textEl);
+
+    if (state.veiculosSelecionados.length > 0) {
+      const btnClear = el("button", "btn-clear-vehicles", "Limpar");
+      btnClear.type = "button";
+      btnClear.onclick = () => {
+        state.veiculosSelecionados = [];
+        render();
+      };
+      yellowBox.appendChild(btnClear);
+    }
+
     c.appendChild(yellowBox);
   }
 
   const list = el("div","grid-2-list");
+  
+  // Renderiza as opções padrão
   t.subtipos.forEach(s=>{
-    const selected = state.subtipoIds.includes(s.id);
-    const btn = el("button","opt-row"+(selected?" selected":""));
-    btn.type="button";
-    btn.appendChild(el("span","btn-label-clean", s.nome));
-    btn.onclick = ()=>{ toggleSubtipo(s.id); render(); };
-    list.appendChild(btn);
+    if(t.quantidadeVeiculos){
+      const count = state.veiculosSelecionados.filter(item => item === s.nome).length;
+      const btn = el("button","opt-row"+(count > 0 ? " selected" : ""));
+      btn.type = "button";
+      btn.appendChild(el("span","btn-label-clean", s.nome));
+      if(count > 0){
+        btn.appendChild(el("span","count-badge", `+${count}`));
+      }
+      btn.onclick = ()=>{
+        state.veiculosSelecionados.push(s.nome);
+        render();
+      };
+      list.appendChild(btn);
+    } else {
+      const selected = state.subtipoIds.includes(s.id);
+      const btn = el("button","opt-row"+(selected?" selected":""));
+      btn.type = "button";
+      btn.appendChild(el("span","btn-label-clean", s.nome));
+      btn.onclick = ()=>{ toggleSubtipo(s.id); render(); };
+      list.appendChild(btn);
+    }
   });
+
+  // Renderiza as opções customizadas (digitadas pelo usuário em "Outros")
+  if (t.quantidadeVeiculos) {
+    const standardNames = t.subtipos.map(s => s.nome);
+    const customVehicles = [...new Set(state.veiculosSelecionados.filter(v => !standardNames.includes(v)))];
+    
+    customVehicles.forEach(customName => {
+      const count = state.veiculosSelecionados.filter(item => item === customName).length;
+      const btn = el("button","opt-row selected");
+      btn.type = "button";
+      btn.appendChild(el("span","btn-label-clean", customName));
+      btn.appendChild(el("span","count-badge", `+${count}`));
+      btn.onclick = ()=>{
+        state.veiculosSelecionados.push(customName);
+        render();
+      };
+      list.appendChild(btn);
+    });
+  } else {
+    state.subtiposAdicionais.forEach((customName, idx) => {
+      const btn = el("button","opt-row selected");
+      btn.type = "button";
+      btn.appendChild(el("span","btn-label-clean", customName));
+      // Clicar em um customizado de não-veículo remove ele da lista
+      btn.onclick = ()=>{
+        state.subtiposAdicionais.splice(idx, 1);
+        render();
+      };
+      list.appendChild(btn);
+    });
+  }
+
   c.appendChild(list);
+
+  /* Caixa de texto Outros com Botão OK */
+  const fieldOutros = el("div", "field-outros");
+  fieldOutros.appendChild(el("div", "field-label", "Outros (digite e clique em OK para adicionar)"));
+  
+  const outrosRow = el("div", "outros-row");
+  
+  const inputOutros = el("input", "input-outros");
+  inputOutros.type = "text";
+  inputOutros.placeholder = "Digite outra opção...";
+  inputOutros.id = "input-custom-subtipo";
+  
+  const btnOk = el("button", "btn-ok", "OK");
+  btnOk.type = "button";
+  
+  const adicionarCustomizado = () => {
+    const val = inputOutros.value.trim();
+    if (val) {
+      if (t.quantidadeVeiculos) {
+        state.veiculosSelecionados.push(val);
+      } else {
+        if (!state.subtiposAdicionais.includes(val)) {
+          state.subtiposAdicionais.push(val);
+        }
+      }
+      render();
+    }
+  };
+
+  btnOk.onclick = adicionarCustomizado;
+  inputOutros.onkeypress = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      adicionarCustomizado();
+    }
+  };
+
+  outrosRow.appendChild(inputOutros);
+  outrosRow.appendChild(btnOk);
+  fieldOutros.appendChild(outrosRow);
+  c.appendChild(fieldOutros);
 
   if(algumSubtipoResidencial()){
     c.appendChild(renderResidencialDetalhes());
   }
 
-  const next = el("button","btn-primary btn-block","Avançar");
-  next.disabled = state.subtipoIds.length===0;
-  next.onclick = ()=>{ state.screen=3; render(); window.scrollTo(0,0); };
-  c.appendChild(next);
+  const isNextDisabled = t.quantidadeVeiculos
+    ? state.veiculosSelecionados.length === 0
+    : (state.subtipoIds.length === 0 && state.subtiposAdicionais.length === 0);
+
+  const nav = renderNavButtons(
+    () => { state.screen = 1; render(); window.scrollTo(0, 0); },
+    () => { state.screen = 3; render(); window.scrollTo(0, 0); },
+    "Avançar",
+    isNextDisabled
+  );
+  c.appendChild(nav);
+
   return c;
 }
 
@@ -392,23 +548,35 @@ function counterField(label, value, onChange){
 function renderPerguntasScreen(){
   const t = tipoAtual();
   const c = el("div","screen");
-  c.appendChild(navBar(()=>{state.screen=2;render();}));
   c.appendChild(el("h1","screen-title","Detalhes da Ocorrência"));
-  c.appendChild(el("p","screen-sub", t.nome + " — " + subtiposSelecionados().map(s=>s.nome).join(", ")));
+  
+  let subtipoText = "";
+  if(t.quantidadeVeiculos){
+    subtipoText = state.veiculosSelecionados.join(" x ");
+  } else {
+    let items = subtiposSelecionados().map(s=>s.nome).concat(state.subtiposAdicionais);
+    subtipoText = items.join(", ");
+  }
+
+  c.appendChild(el("p","screen-sub", t.nome + (subtipoText ? " — " + subtipoText : "")));
 
   t.perguntas.forEach(p=>{
     c.appendChild(renderPergunta(p));
   });
 
-  const next = el("button","btn-primary btn-yellow btn-block","GERAR INFORME OPERACIONAL");
-  next.onclick = ()=>{ 
-    state.geradoEm = new Date(); 
-    if(!state.coordenadas) capturarLocalizacaoAutomatica();
-    state.screen=4; 
-    render(); 
-    window.scrollTo(0,0); 
-  };
-  c.appendChild(next);
+  const nav = renderNavButtons(
+    () => { state.screen = 2; render(); window.scrollTo(0, 0); },
+    () => { 
+      state.geradoEm = new Date(); 
+      if(!state.coordenadas) capturarLocalizacaoAutomatica();
+      state.screen = 4; 
+      render(); 
+      window.scrollTo(0,0); 
+    },
+    "GERAR INFORME OPERACIONAL"
+  );
+  c.appendChild(nav);
+
   return c;
 }
 
@@ -587,17 +755,6 @@ function renderTextoBlock(p, box){
   return box;
 }
 
-/* ---------- Navegação ---------- */
-
-function navBar(onBack){
-  const bar = el("div","navbar");
-  const back = el("button","btn-back","< Voltar");
-  back.type="button";
-  back.onclick = onBack;
-  bar.appendChild(back);
-  return bar;
-}
-
 /* ---------- Geração do Informe ---------- */
 
 const SEPARADOR = "--------------------------------";
@@ -620,8 +777,18 @@ function gerarTextoInforme(){
 
   const loc = [];
   loc.push("TIPO: " + t.nome.toUpperCase());
-  if(subs.length) loc.push("SUBTIPO: " + subs.map(s=>s.nome).join(", "));
-  if(t.quantidadeVeiculos && state.quantidadeVeiculos>0) loc.push("Quantidade de veículos: " + state.quantidadeVeiculos);
+
+  if(t.quantidadeVeiculos){
+    if(state.veiculosSelecionados.length > 0){
+      loc.push("SUBTIPO: " + state.veiculosSelecionados.join(" x "));
+    }
+  } else {
+    let listaSubtipos = subs.map(s => s.nome).concat(state.subtiposAdicionais);
+    if(listaSubtipos.length > 0){
+      loc.push("SUBTIPO: " + listaSubtipos.join(", "));
+    }
+  }
+
   if(subs.some(s=>s.residencial)){
     const rd = state.residencial;
     if(rd.tipoImovel) loc.push("Edificação: " + rd.tipoImovel);
@@ -723,8 +890,27 @@ function refreshTicketPre(){
 
 function renderInformeScreen(){
   const c = el("div","screen");
-  c.appendChild(navBar(()=>{state.screen=3;render();}));
   c.appendChild(el("h1","screen-title","Informe Operacional"));
+
+  /* Alerta solicitando para ligar a localização se não houver coordenadas */
+  if(!state.coordenadas) {
+    const alertBox = el("div", "geo-alert-box");
+    
+    const title = el("div", "geo-alert-title", "📍 Localização não capturada");
+    const desc = el("div", "geo-alert-desc", 
+      state.geoMensagem || "Por favor, ligue a Localização (GPS) do seu aparelho e permita o acesso ao navegador para incluir endereço e coordenadas no informe."
+    );
+    
+    const btnRetry = el("button", "btn-geo", state.buscandoGeo ? "Buscando localização..." : "Ligar/Tentar Obter Localização");
+    btnRetry.type = "button";
+    btnRetry.disabled = state.buscandoGeo;
+    btnRetry.onclick = () => {
+      capturarLocalizacaoAutomatica();
+    };
+
+    alertBox.append(title, desc, btnRetry);
+    c.appendChild(alertBox);
+  }
 
   const ticket = el("div","ticket");
   const pre = el("pre","ticket-text");
@@ -770,9 +956,15 @@ function renderInformeScreen(){
 
   actions.append(btnWpp, btnCopy, btnReset);
   c.appendChild(actions);
+
+  const nav = renderNavButtons(
+    () => { state.screen = 3; render(); window.scrollTo(0, 0); },
+    null
+  );
+  c.appendChild(nav);
+
   return c;
 }
-
 /* ---------- Inicialização ---------- */
 
 render();

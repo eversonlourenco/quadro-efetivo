@@ -62,12 +62,60 @@ body{
   padding-bottom: 4px;
 }
 
-.navbar{ margin-bottom: 12px; }
-.btn-back{
-  background:none; border:none; color:var(--text-dim);
-  font-size:14px; padding:6px 0; cursor:pointer; font-weight:600;
+/* Navegação em linha: Voltar (Azul) e Avançar (Vermelho) */
+.nav-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+  margin-bottom: 10px;
 }
-.btn-back:active{ color:var(--text); }
+
+.nav-buttons button {
+  flex: 1;
+}
+
+.btn-blue,
+.btn-secondary {
+  background-color: var(--blue);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+.btn-blue:active,
+.btn-secondary:active {
+  opacity: 0.85;
+}
+
+.btn-primary {
+  background-color: var(--red);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: .02em;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:disabled {
+  background-color: #2f1c1c;
+  color: #6b4747;
+  cursor: not-allowed;
+}
+
+.btn-block { width: 100%; display: block; }
+.btn-yellow { background-color: var(--amber); color: #121212; }
 
 /* Listas verticais (Tela 1) */
 .stack-list{ display:flex; flex-direction:column; gap:10px; }
@@ -80,37 +128,41 @@ body{
   margin-bottom: 14px;
 }
 
-/* Destaque Amarelo para Quantidade de Veículos (Tela 2) */
-.counter-yellow-box {
+/* Destaque Amarelo para Resumo de Veículos (Tela 2) */
+.vehicle-summary-box {
   background: var(--amber);
   border-radius: var(--radius);
-  padding: 4px 16px;
+  padding: 12px 16px;
   margin-bottom: 14px;
   box-shadow: 0 2px 8px rgba(255, 204, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
-.counter-yellow-box .field-label {
-  color: #121212 !important;
-  font-size: 13px;
-  font-weight: 800;
-}
-.counter-yellow-box .counter-val {
+
+.vehicle-summary-text {
   color: #121212;
   font-weight: 900;
-  font-size: 17px;
+  font-size: 15px;
+  word-break: break-word;
 }
-.counter-yellow-box .counter-btn {
+
+.btn-clear-vehicles {
   background: #121212;
-  border-color: #121212;
   color: var(--amber);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 12px;
   font-weight: 800;
-}
-.counter-yellow-box .counter-row {
-  border-bottom: none;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .opt-row{
   width:100%;
-  display:flex; align-items:center; justify-content:flex-start;
+  display:flex; align-items:center; justify-content:space-between;
   background:var(--bg-panel); border:1px solid var(--line); border-radius: var(--radius);
   padding:15px 18px; color:var(--text); font-size:15px; font-weight:600;
   text-align:left; cursor:pointer; transition: all 0.15s ease;
@@ -121,7 +173,16 @@ body{
   color:#ffe066;
 }
 .opt-row .btn-label-clean{
-  width:100%;
+  flex: 1;
+}
+.opt-row .count-badge {
+  background: var(--amber);
+  color: #121212;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 12px;
+  margin-left: 8px;
 }
 .opt-row:active{ transform: scale(.99); }
 
@@ -130,6 +191,51 @@ body{
   border-color:var(--red);
   background:var(--red-dim);
   color:#ffffff;
+}
+
+/* Caixa Outros com botão OK */
+.field-outros {
+  margin-top: 14px;
+  margin-bottom: 14px;
+}
+
+.outros-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.input-outros {
+  flex: 1;
+  background: var(--bg-panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-outros:focus {
+  border-color: var(--amber);
+}
+
+.btn-ok {
+  background-color: var(--green);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0 20px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-ok:active {
+  opacity: 0.85;
 }
 
 /* Grid de seleção (Tela 3) */
@@ -214,16 +320,52 @@ body{
   padding-bottom:8px; border-bottom:1px solid var(--red-dim);
 }
 
-.btn-primary{
-  background:var(--red); color:#fff; border:none; border-radius: var(--radius);
-  padding:15px; font-size:15px; font-weight:800; letter-spacing:.02em; cursor:pointer; margin-top:6px;
+/* Alerta de Localização Desativada */
+.geo-alert-box {
+  background: var(--amber-dim);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.btn-primary:disabled{ background:#2f1c1c; color:#6b4747; cursor:not-allowed; }
-.btn-block{ width:100%; display:block; }
-.btn-yellow{ background:var(--amber); color:#121212; }
 
-/* Localização */
-/* Ticket do Informe — fundo preto, letras douradas */
+.geo-alert-title {
+  color: var(--amber);
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.geo-alert-desc {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.btn-geo {
+  background-color: var(--amber);
+  color: #121212;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-top: 4px;
+  transition: opacity 0.2s;
+}
+
+.btn-geo:active {
+  opacity: 0.85;
+}
+
+/* Localização / Ticket do Informe */
 .ticket{
   background: #0a0a0a; color:#d4af37; border-radius:8px; padding:18px;
   border: 1px dashed #7a6320; margin-bottom:18px;
