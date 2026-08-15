@@ -44,7 +44,7 @@ const SENTIDO_VIA = { key:"sentido", label:"Sentido", type:"checkbox",
 
 // Removido o tipo "checkboxComTexto" e a propriedade "textoLabel", passando para "checkbox" simples
 const MATERIAL_TRANSPORTADO = { key:"materialTransportado", label:"Tipo de Material Transportado", type:"checkbox",
-  options:["Carga Comum","Inflamável","Química","Explosiva"] };
+  options:["Carga Diversas","Inflamável","Química","Explosiva"] };
 
 const SITUACAO_ACIDENTE = { key:"situacao", label:"Situação Encontrada", type:"checkbox",
   options:["Vítima dentro do veículo","Vítima já fora do veículo","Vítima presa às ferragens","Vítima ejetada","Múltiplas vítimas","Veículo com GNV","Veículo Híbrido","Veículo 100% Elétrico","Carga Perigosa","Vazamento de carga"] };
